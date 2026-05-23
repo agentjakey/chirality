@@ -110,6 +110,17 @@ PRESETS = {
         mode="radial_clean", boundary="periodic",
         min_distance=1.0,
     ),
+    "hero_reference_match": dict(
+        grid_size=64, L=10.0,
+        Da=0.05, Dh=5.0, mu_a=0.05, mu_h=0.05, rho=0.1, rho_0=0.001, kappa=0.1,
+        dt_field=0.5, n_field_steps=3000,
+        n_arms=7, n_per_arm=5, r_target=1.4,
+        v0=0.04, Dr=0.03, omega=0.3,
+        k_attract=0.35, k_radial=2.5, k_angular=0.7, k_ev=0.5, sigma_ev=0.16,
+        dt=0.02, n_steps=500, n_snapshots=10,
+        mode="chiral_twist", boundary="periodic",
+        min_distance=2.5,
+    ),
 }
 
 

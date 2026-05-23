@@ -4,6 +4,7 @@ Slide-ready panel figures for the 5-minute hackathon presentation.
 All panels are 12 x 6.75 inches (16:9) at 120 dpi = 1440 x 810 px.
 """
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -14,6 +15,7 @@ from .style import (
     BG, INK, ACCENT, GREEN, NEUTRAL, BORDER, PANEL_BG,
     FIELD_CMAP, CHIRALITY_CMAP,
     TITLE_FS, LABEL_FS, TICK_FS,
+    ZOOID_PALETTE,
 )
 from ..model_library import ensure_dir
 
@@ -21,7 +23,14 @@ SLIDE_W = 12.0
 SLIDE_H = 6.75
 SLIDE_DPI = 120
 
-_PALETTE = [ACCENT, GREEN, "#7B6B8B", "#8B7355", "#4A7B8B", "#8B4A6B", "#6B8B4A"]
+_PALETTE = ZOOID_PALETTE
+
+_REF_IMAGE_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__)
+    )))),
+    "assets", "reference", "star_ascidian_reference.jpg",
+)
 
 
 def _slide_fig(ncols=1, nrows=1, width_ratios=None, height_ratios=None):
@@ -68,8 +77,29 @@ def _draw_schematic_star(ax, cx, cy, r_inner, r_outer, n_arms,
         ))
 
 
+def _show_reference_image(ax, ref_path=None):
+    """Display the real reference image in ax, or fall back to schematic."""
+    path = ref_path or _REF_IMAGE_PATH
+    if os.path.exists(path):
+        try:
+            img = plt.imread(path)
+            ax.imshow(img, aspect="auto")
+            ax.set_xticks([])
+            ax.set_yticks([])
+            return True
+        except Exception:
+            pass
+    _draw_schematic_star(ax, 0.5, 0.5, 0.10, 0.40, 7)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_aspect("equal")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    return False
+
+
 def make_slide1_target_and_simulation(zooid_result, field_result, output_path):
-    """Slide 1: Target schematic vs simulation snapshot side by side.
+    """Slide 1: Real reference image vs simulation snapshot side by side.
 
     zooid_result: ZooidResult from clean_star_systems preset
     field_result: dict from generate_star_centers (has 'field', 'centers')
@@ -82,19 +112,20 @@ def make_slide1_target_and_simulation(zooid_result, field_result, output_path):
     fig.suptitle("Star Ascidian Colony: Target vs Model", fontsize=TITLE_FS + 1,
                  color=INK, y=0.97)
 
-    # Left: biological target schematic
+    # Left: real reference image (falls back to schematic if missing)
     ax = axes[0]
-    ax.set_facecolor(PANEL_BG)
-    _draw_schematic_star(ax, 0.5, 0.5, 0.10, 0.40, 7)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.set_aspect("equal")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title("Target: Botryllus schlosseri", fontsize=LABEL_FS, color=INK, pad=5)
-    ax.text(0.5, 0.04, "7 radial arms, shared atrium",
-            ha="center", va="bottom", fontsize=TICK_FS, color=NEUTRAL,
-            transform=ax.transAxes)
+    ax.set_facecolor("#1A1A2E")
+    used_real = _show_reference_image(ax)
+    label = "Botryllus schlosseri (reference)" if used_real else "Target: Botryllus schlosseri (schematic)"
+    ax.set_title(label, fontsize=LABEL_FS, color=INK, pad=5)
+    if used_real:
+        ax.text(0.5, 0.02, "Star ascidian colony. Radial arms, shared atrium.",
+                ha="center", va="bottom", fontsize=TICK_FS, color="#DDD5C8",
+                transform=ax.transAxes)
+    else:
+        ax.text(0.5, 0.04, "7 radial arms, shared atrium",
+                ha="center", va="bottom", fontsize=TICK_FS, color=NEUTRAL,
+                transform=ax.transAxes)
     for sp in ax.spines.values():
         sp.set_edgecolor(BORDER)
 
@@ -120,27 +151,27 @@ def make_slide1_target_and_simulation(zooid_result, field_result, output_path):
     for sp in ax.spines.values():
         sp.set_edgecolor(BORDER)
 
-    # Right: agent snapshot
+    # Right: agent snapshot with biological colors
     ax = axes[2]
-    ax.set_facecolor(PANEL_BG)
+    ax.set_facecolor("#0D1117")
     pos = zooid_result.positions[-1]
     K = zooid_result.K
     L_z = zooid_result.L
     for k in range(K):
         mask = zooid_result.assignments == k
-        ax.scatter(pos[mask, 0], pos[mask, 1], s=8,
-                   color=_PALETTE[k % len(_PALETTE)], alpha=0.80,
+        ax.scatter(pos[mask, 0], pos[mask, 1], s=14,
+                   color=_PALETTE[k % len(_PALETTE)], alpha=0.85,
                    linewidths=0, zorder=2)
     ax.scatter(zooid_result.centers[:, 0], zooid_result.centers[:, 1],
-               s=40, color=INK, marker="+", linewidths=1.4, zorder=4)
+               s=50, color="#FFFFFF", marker="+", linewidths=1.6, zorder=4)
     ax.set_xlim(0, L_z)
     ax.set_ylim(0, L_z)
     ax.set_title(f"Layer 2: Zooid Agents (K={K})", fontsize=LABEL_FS, color=INK, pad=5)
-    ax.set_xlabel("x", fontsize=TICK_FS, color=INK)
-    ax.set_ylabel("y", fontsize=TICK_FS, color=INK)
-    ax.tick_params(colors=INK, labelsize=TICK_FS)
+    ax.set_xlabel("x", fontsize=TICK_FS, color="#AAAAAA")
+    ax.set_ylabel("y", fontsize=TICK_FS, color="#AAAAAA")
+    ax.tick_params(colors="#AAAAAA", labelsize=TICK_FS)
     for sp in ax.spines.values():
-        sp.set_edgecolor(BORDER)
+        sp.set_edgecolor("#333333")
 
     fig.tight_layout(rect=[0, 0, 1, 0.94])
     fig.savefig(output_path, dpi=SLIDE_DPI, bbox_inches="tight")
@@ -262,25 +293,25 @@ def make_slide3_simulation_sequence(zooid_result, output_path):
 
     for col, (idx, label) in enumerate(zip(indices, labels)):
         ax = axes[col]
-        ax.set_facecolor(PANEL_BG)
+        ax.set_facecolor("#0D1117")
         pos = zooid_result.positions[idx]
         for k in range(K):
             mask = assignments == k
-            ax.scatter(pos[mask, 0], pos[mask, 1], s=9,
+            ax.scatter(pos[mask, 0], pos[mask, 1], s=12,
                        color=_PALETTE[k % len(_PALETTE)],
-                       alpha=0.80, linewidths=0, zorder=2)
-        ax.scatter(centers[:, 0], centers[:, 1], s=40, color=INK,
-                   marker="+", linewidths=1.4, zorder=4)
+                       alpha=0.85, linewidths=0, zorder=2)
+        ax.scatter(centers[:, 0], centers[:, 1], s=45, color="#FFFFFF",
+                   marker="+", linewidths=1.5, zorder=4)
         ax.set_xlim(0, L)
         ax.set_ylim(0, L)
         ax.set_aspect("equal")
         ax.set_title(label, fontsize=LABEL_FS, color=INK, pad=4)
-        ax.set_xlabel("x", fontsize=TICK_FS, color=INK)
-        ax.tick_params(colors=INK, labelsize=TICK_FS)
+        ax.set_xlabel("x", fontsize=TICK_FS, color="#AAAAAA")
+        ax.tick_params(colors="#AAAAAA", labelsize=TICK_FS)
         if col > 0:
             ax.set_yticklabels([])
         for sp in ax.spines.values():
-            sp.set_edgecolor(BORDER)
+            sp.set_edgecolor("#333333")
 
     fig.tight_layout(rect=[0, 0, 1, 0.94])
     fig.savefig(output_path, dpi=SLIDE_DPI, bbox_inches="tight")
@@ -397,7 +428,7 @@ def make_slide5_insight_and_limits(result, output_path, target_arms=7):
 
 def make_final_summary_panel(result_clean, result_chiral, field_data,
                              x_vals, y_vals, sl_grid, output_path):
-    """6-panel summary: target, GM field, clean agents, chiral agents,
+    """6-panel summary: reference/target, GM field, clean agents, chiral agents,
     phase diagram, metric table.
 
     result_clean:  StarColonyResult for clean_star_systems
@@ -415,15 +446,17 @@ def make_final_summary_panel(result_clean, result_chiral, field_data,
     gs = fig.add_gridspec(2, 3, hspace=0.38, wspace=0.32,
                           left=0.04, right=0.97, top=0.91, bottom=0.05)
 
-    # [0,0] target schematic
+    # [0,0] reference image or schematic
     ax = fig.add_subplot(gs[0, 0])
-    ax.set_facecolor(PANEL_BG)
-    _draw_schematic_star(ax, 0.5, 0.5, 0.10, 0.42, 7)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.set_aspect("equal")
-    ax.set_xticks([])
-    ax.set_yticks([])
+    ax.set_facecolor("#1A1A2E")
+    used_real = _show_reference_image(ax)
+    if not used_real:
+        _draw_schematic_star(ax, 0.5, 0.5, 0.10, 0.42, 7)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.set_aspect("equal")
+        ax.set_xticks([])
+        ax.set_yticks([])
     ax.set_title("Target organism", fontsize=LABEL_FS, color=INK, pad=4)
     for sp in ax.spines.values():
         sp.set_edgecolor(BORDER)
@@ -496,21 +529,21 @@ def make_final_summary_panel(result_clean, result_chiral, field_data,
 
 
 def _plot_zooid_snap(ax, zooid_result, title):
-    """Shared helper: plot final agent snapshot on ax."""
-    ax.set_facecolor(PANEL_BG)
+    """Shared helper: plot final agent snapshot on ax with biological colors."""
+    ax.set_facecolor("#0D1117")
     pos = zooid_result.positions[-1]
     K = zooid_result.K
     L = zooid_result.L
     for k in range(K):
         mask = zooid_result.assignments == k
-        ax.scatter(pos[mask, 0], pos[mask, 1], s=6,
+        ax.scatter(pos[mask, 0], pos[mask, 1], s=8,
                    color=_PALETTE[k % len(_PALETTE)],
-                   alpha=0.80, linewidths=0, zorder=2)
+                   alpha=0.85, linewidths=0, zorder=2)
     ax.scatter(zooid_result.centers[:, 0], zooid_result.centers[:, 1],
-               s=30, color=INK, marker="+", linewidths=1.2, zorder=4)
+               s=35, color="#FFFFFF", marker="+", linewidths=1.4, zorder=4)
     ax.set_xlim(0, L)
     ax.set_ylim(0, L)
     ax.set_title(title, fontsize=LABEL_FS, color=INK, pad=4)
-    ax.tick_params(colors=INK, labelsize=TICK_FS - 1)
+    ax.tick_params(colors="#AAAAAA", labelsize=TICK_FS - 1)
     for sp in ax.spines.values():
-        sp.set_edgecolor(BORDER)
+        sp.set_edgecolor("#333333")

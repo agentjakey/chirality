@@ -182,10 +182,10 @@ def _tab_target():
     st.markdown(
         "*Botryllus schlosseri* is a colonial tunicate (sea squirt) that tiles "
         "hard substrates as a mat of star-shaped systems. Each star consists of "
-        "5–10 zooids (individual filter-feeding animals) arranged radially around "
+        "5-10 zooids (individual filter-feeding animals) arranged radially around "
         "a shared central atrium. Neighboring stars maintain characteristic spacing "
         "and do not merge under normal conditions. Some genetic variants exhibit "
-        "consistent rotational handedness — a biological chirality signature."
+        "consistent rotational handedness, a biological chirality signature."
     )
 
     col_img, col_info = st.columns([1, 1], gap="large")
@@ -407,29 +407,30 @@ def _tab_model_builder():
             plt.close(fig)
 
         with ic2:
-            palette = ["#C15A3A", "#315C4C", "#7B6B8B", "#8B7355",
-                       "#4A7B8B", "#8B4A6B", "#6B8B4A"]
+            from chirality.visualization.style import ZOOID_PALETTE
             fig, ax = plt.subplots(figsize=(5, 5), facecolor="#F7F3EA")
-            ax.set_facecolor("#F7F3EA")
+            ax.set_facecolor("#0D1117")
             pos = result.zooid.positions[-1]
             K = result.zooid.K
             L = result.params["L"]
             for k in range(K):
                 mask = result.zooid.assignments == k
-                ax.scatter(pos[mask, 0], pos[mask, 1], s=10,
-                           color=palette[k % len(palette)], alpha=0.80,
-                           linewidths=0, zorder=2)
+                ax.scatter(pos[mask, 0], pos[mask, 1], s=14,
+                           color=ZOOID_PALETTE[k % len(ZOOID_PALETTE)],
+                           alpha=0.85, linewidths=0, zorder=2)
             ax.scatter(result.centers[:, 0], result.centers[:, 1],
-                       s=45, color="#1F2421", marker="+", linewidths=1.5, zorder=4)
+                       s=50, color="#FFFFFF", marker="+", linewidths=1.6, zorder=4)
             ax.set_xlim(0, L)
             ax.set_ylim(0, L)
             ax.set_title(
                 f"Zooid agents  (N={result.zooid.N}, omega={omega:.1f})",
                 fontsize=11, color="#1F2421",
             )
-            ax.set_xlabel("x", fontsize=9, color="#1F2421")
-            ax.set_ylabel("y", fontsize=9, color="#1F2421")
-            ax.tick_params(colors="#1F2421", labelsize=8)
+            ax.set_xlabel("x", fontsize=9, color="#AAAAAA")
+            ax.set_ylabel("y", fontsize=9, color="#AAAAAA")
+            ax.tick_params(colors="#AAAAAA", labelsize=8)
+            for sp in ax.spines.values():
+                sp.set_edgecolor("#333333")
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
 
@@ -621,59 +622,100 @@ def _tab_phase_explorer():
 def _tab_movie_gallery():
     st.markdown("## Movie Gallery")
     st.markdown(
-        "These animations show the system evolving from initialization to steady state. "
-        "Each frame is one simulation snapshot."
+        "Arms self-organize from random initialization into star-shaped colonies. "
+        "Each frame is one simulation snapshot. **Start with the first two** for the clearest story."
     )
 
-    movies = [
-        (
-            os.path.join("outputs", "movies", "star_formation_clean.gif"),
-            "Clean star formation (omega = 0)",
-            "Watch the arms self-organize. At t=0 agents are in initial arm groups "
-            "with small random offsets. By the final frame they have settled into "
-            "radial lobes at r_target. Radial spring drives them outward; "
-            "angular repulsion pushes arms apart.",
-        ),
-        (
-            os.path.join("outputs", "movies", "chiral_twist_emergence.gif"),
-            "Chiral twist emergence (omega = 2.5)",
-            "Same initialization, but with a nonzero rotation rate (omega). "
-            "The arms slowly rotate CCW over time. Compare the final arm angles "
-            "to the clean case — they are rotated by omega * t. "
-            "This is the model's analog of biological chirality.",
-        ),
-        (
-            os.path.join("outputs", "movies", "phase_transition_parameter_sweep.gif"),
-            "Phase transition: omega 0 to 5",
-            "Each frame shows a different omega value. At omega=0 the pattern "
-            "is radial and static. As omega increases, arms begin to smear and "
-            "eventually lose coherence at omega=5. The transition is gradual — "
-            "there is no sharp phase boundary at this agent density.",
-        ),
-        (
-            os.path.join("outputs", "movies", "active_zooid_dynamics.gif"),
-            "Single-center zoom: active zooid dynamics",
-            "Zoomed into one star center. Individual agents jitter due to "
-            "rotational noise (Dr=0.04). The radial spring prevents them from "
-            "escaping; angular repulsion maintains arm separation. "
-            "Notice that arms are not rigid — they fluctuate around their "
-            "equilibrium angles.",
-        ),
-    ]
+    st.markdown(
+        "<div style='background:#0D1117;border-radius:6px;padding:0.6rem 1rem;"
+        "border:1px solid #333;margin-bottom:1rem'>"
+        "<span style='color:#7AA8C8;font-size:0.82rem;font-weight:700;letter-spacing:0.05em'>"
+        "FEATURED ANIMATIONS</span></div>",
+        unsafe_allow_html=True,
+    )
+
+    hero_a, hero_b = st.columns(2, gap="large")
+
+    with hero_a:
+        st.markdown(
+            "<div style='font-size:1.0rem;font-weight:700;color:#1F2421;margin-bottom:0.3rem'>"
+            "1. Clean Star Formation</div>"
+            "<div style='font-size:0.82rem;color:#555;margin-bottom:0.5rem'>"
+            "omega = 0  |  radial  |  clean_star_systems preset</div>",
+            unsafe_allow_html=True,
+        )
+        _show_gif_safe(os.path.join("outputs", "movies", "star_formation_clean.gif"))
+        st.markdown(
+            "<div class='notice-box'>"
+            "<strong>What to notice:</strong> Arms self-organize from noise. "
+            "At t=0 agents start in arm groups with random offsets. "
+            "By the final frame they have settled into radial lobes at r_target. "
+            "Radial spring drives them outward; angular repulsion pushes arms apart.<br>"
+            "<strong>Why it matters:</strong> No global template. "
+            "Arms emerge from local rules only."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    with hero_b:
+        st.markdown(
+            "<div style='font-size:1.0rem;font-weight:700;color:#1F2421;margin-bottom:0.3rem'>"
+            "2. Chiral Twist Emergence</div>"
+            "<div style='font-size:0.82rem;color:#555;margin-bottom:0.5rem'>"
+            "omega = 2.5  |  chiral  |  chiral_twisted_stars preset</div>",
+            unsafe_allow_html=True,
+        )
+        _show_gif_safe(os.path.join("outputs", "movies", "chiral_twist_emergence.gif"))
+        st.markdown(
+            "<div class='notice-box'>"
+            "<strong>What to notice:</strong> Same initialization, nonzero turning rate. "
+            "Arms slowly rotate CCW. Compare final arm angles to the clean case.<br>"
+            "<strong>Why it matters:</strong> Chirality is measurable. "
+            "Swirl score rises from ~0.01 to ~0.3 with omega = 2.5."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("---")
+    st.markdown("### Additional Animations")
 
     col_a, col_b = st.columns(2, gap="large")
-    for i, (path, title, caption) in enumerate(movies):
-        col = col_a if i % 2 == 0 else col_b
-        with col:
-            st.markdown(f"**{title}**")
-            _show_gif_safe(path)
-            _notice(caption)
-            st.markdown("---")
 
+    with col_a:
+        st.markdown(
+            "<div style='font-size:0.95rem;font-weight:700;color:#1F2421;margin-bottom:0.4rem'>"
+            "3. Phase Transition: omega 0 to 5</div>",
+            unsafe_allow_html=True,
+        )
+        _show_gif_safe(os.path.join("outputs", "movies", "phase_transition_parameter_sweep.gif"))
+        st.markdown(
+            "<div style='font-size:0.88rem;color:#333;margin-top:0.4rem'>"
+            "Each frame shows a different omega value. Arm coherence degrades "
+            "gradually as chirality increases. No sharp phase boundary at this density."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    with col_b:
+        st.markdown(
+            "<div style='font-size:0.95rem;font-weight:700;color:#1F2421;margin-bottom:0.4rem'>"
+            "4. Single-Center Zoom: Zooid Dynamics</div>",
+            unsafe_allow_html=True,
+        )
+        _show_gif_safe(os.path.join("outputs", "movies", "active_zooid_dynamics.gif"))
+        st.markdown(
+            "<div style='font-size:0.88rem;color:#333;margin-top:0.4rem'>"
+            "Zoomed into one star center. Arms are not rigid: they fluctuate around "
+            "equilibrium angles due to rotational noise (Dr=0.04). "
+            "Radial spring prevents escape."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("---")
     st.info(
-        "GIFs were generated by `scripts/04_make_movies.py` using Pillow. "
-        "Each GIF is 16 frames at 6 fps (or 8 frames at 2 fps for the sweep). "
-        "If they appear as static images, try opening the GIF file directly."
+        "GIFs generated by `scripts/04_make_movies.py` using Pillow. "
+        "If animations appear static, open the .gif files directly in Chrome."
     )
 
 
@@ -1037,119 +1079,120 @@ def _tab_presentation():
         "Files are listed with paths relative to repo root."
     )
 
-    st.markdown("### 5-Slide Outline")
+    # Quick start box
+    st.markdown(
+        "<div style='background:#E8F0EC;border-left:4px solid #315C4C;"
+        "border-radius:0 5px 5px 0;padding:0.8rem 1.2rem;margin-bottom:1rem'>"
+        "<strong style='color:#315C4C'>Quick start:</strong>"
+        "<span style='color:#1F2421'> Open slides in order. "
+        "For live demo: Model Builder tab, run with defaults, then omega=2.5.</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### 5-Slide Story")
 
     slides = [
         (
-            "Slide 1 — Target and Model",
+            "Slide 1 (1:00) -- Can local rules generate a living star pattern?",
             "outputs/panels/slide1_target_and_simulation.png",
             "1:00",
-            (
-                "Open with the biological image or schematic. "
-                "Point to the star geometry — shared atrium, radial arms, regular spacing. "
-                "Say: 'We asked whether local rules alone can generate this pattern. "
-                "The answer is yes, with two coupled layers.' "
-                "Show the three-panel figure: schematic | GM field | agents."
-            ),
+            "Open with the biological reference image. Point to the star geometry: "
+            "shared atrium, radial arms, regular spacing. "
+            "Say: 'We asked whether local rules alone can generate this pattern. "
+            "The answer is yes, with two coupled layers.' "
+            "Show the three-panel figure: reference | GM field | agents.",
         ),
         (
-            "Slide 2 — How the Model Works",
+            "Slide 2 (0:50) -- Model: centers first, stars second",
             "outputs/panels/slide2_model_schematic.png",
             "0:50",
-            (
-                "Walk through the architecture diagram. "
-                "Layer 1: GM field places the centers — "
-                "'Turing instability, short-range activation, long-range inhibition.' "
-                "Layer 2: active particles form the arms — "
-                "'radial spring, angular repulsion, chirality.' "
-                "Point at the key equations. Keep it to two sentences per layer."
-            ),
+            "Walk through the architecture diagram. "
+            "Layer 1: GM field places the centers via Turing instability. "
+            "Layer 2: active particles form the arms via radial spring and angular repulsion. "
+            "Point at the key equations. Two sentences per layer. Omega adds chirality.",
         ),
         (
-            "Slide 3 — Dynamics",
+            "Slide 3 (1:00) -- Simulation: from noise to star systems",
             "outputs/panels/slide3_simulation_sequence.png",
             "1:00",
-            (
-                "Show the time sequence: arms self-organize from initialization. "
-                "If the app is running, switch to Movie Gallery and play "
-                "'star_formation_clean.gif' and 'chiral_twist_emergence.gif'. "
-                "Key point: 'With omega=0 the pattern is radial; "
-                "with omega=2.5 the arms rotate — this is the chirality signature.'"
-            ),
+            "Show the time sequence: arms self-organize from initialization. "
+            "If the app is running, switch to Movie Gallery and play "
+            "star_formation_clean.gif and chiral_twist_emergence.gif. "
+            "Key point: With omega=0 the pattern is radial; "
+            "with omega=2.5 the arms rotate. Swirl score rises from 0.01 to 0.3.",
         ),
         (
-            "Slide 4 — Phase Space",
+            "Slide 4 (1:00) -- Creative exploration: phases of living geometry",
             "outputs/panels/slide4_phase_diagram.png",
             "1:00",
-            (
-                "Show both heatmaps side by side. "
-                "Left: star-likeness peaks at moderate k_radial, low omega. "
-                "Right: swirl is zero at omega=0 and rises with chirality. "
-                "Key point: 'The two metrics are not correlated — "
-                "you can have good arms without chirality, and chirality "
-                "without arm degradation (up to omega ~ 2).' "
-                "Point to the phase boundary."
-            ),
+            "Show both heatmaps side by side. "
+            "Left: star-likeness peaks at moderate k_radial, low omega. "
+            "Right: swirl rises with chirality. "
+            "Key point: The two metrics are not correlated -- "
+            "good arms exist without chirality, and chirality up to omega=2 does not destroy arms. "
+            "Label the regimes: clean stars, twisted stars, merged stars.",
         ),
         (
-            "Slide 5 — Honest Assessment",
+            "Slide 5 (1:10) -- Insight, limits, and LLM use",
             "outputs/panels/slide5_insight_and_limits.png",
             "1:10",
-            (
-                "Green column: what the model matches. "
-                "Orange column: what it does not. "
-                "Key points: 'Radial geometry: yes. Arm count: approximately. "
-                "Blastogenic biology: no.' "
-                "End with: 'The value of this model is not biological accuracy — "
-                "it is demonstrating that spatial geometry can emerge from "
-                "two coupled local rules without global coordination.'"
-            ),
+            "Green column: what the model matches. Orange column: what it does not. "
+            "Key points: Radial geometry: yes. Arm count: approximately (detection limit at low density). "
+            "Blastogenic biology: no. "
+            "End with: The value of this model is not biological accuracy -- "
+            "it shows that spatial geometry can emerge from two coupled local rules without global coordination. "
+            "Mention LLM use: IMEX scheme and vectorized angular repulsion, both correct on first try.",
         ),
     ]
 
-    for title, path, duration, script in slides:
-        with st.expander(f"{title}  ({duration})", expanded=False):
-            icol, scol = st.columns([1, 1], gap="large")
+    for i, (title, path, duration, script) in enumerate(slides):
+        with st.expander(title, expanded=(i == 0)):
+            icol, scol = st.columns([1.1, 1], gap="large")
             with icol:
                 _show_image_safe(path)
+                st.markdown(
+                    f"<div style='font-size:0.8rem;color:#666;margin-top:0.3rem'>"
+                    f"File: <code>{path}</code></div>",
+                    unsafe_allow_html=True,
+                )
             with scol:
-                st.markdown(f"**File:** `{path}`")
-                st.markdown(f"**Duration:** {duration}")
-                st.markdown("**Speaker notes:**")
-                st.markdown(script)
+                st.markdown(
+                    "<div style='background:#F7F3EA;border:1px solid #DDD5C8;"
+                    "border-radius:4px;padding:0.9rem 1rem;font-size:0.9rem;color:#1F2421'>"
+                    f"<strong>Speaker notes:</strong><br><br>{script}"
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
 
     st.markdown("---")
-    st.markdown("### Closing Slide")
+    st.markdown("### Closing Slide / Summary Panel")
     _show_image_safe(
         "outputs/panels/final_summary_panel.png",
-        caption="Use as a poster/closing slide. Shows all key outputs in one panel.",
+        caption="6-panel summary: reference, GM field, clean agents, chiral agents, phase diagram, metrics.",
     )
 
     st.markdown("---")
     st.markdown("### 2-Minute Live Demo Script")
     st.markdown(
-        """
-1. Switch to **Model Builder** tab.
-2. Leave defaults (N=32, 1200 field steps). Click **Run Simulation**. (~45-90 seconds)
-3. Point to metric cards: "Radial order is 1.0 — agents are well-contained.
-   Star-likeness shows the composite score."
-4. Increase omega to 2.5. Click **Run Simulation** again.
-5. Compare the agent snapshot: "Arms have rotated — chirality is visible."
-6. Switch to **Live Phase Explorer**. Select Sweep A. Click **Load pregenerated**.
-7. Point to the heatmap: "Best star-likeness at moderate radial attraction and
-   low chirality — the top-left region. High chirality degrades arm structure."
-8. Switch to **Movie Gallery**. Play `star_formation_clean.gif`.
-9. Say: "This is the arms forming in real time from a uniform initialization."
-        """
+        "1. **Model Builder** tab. Leave defaults (N=32, 1200 field steps). "
+        "Click **Run Simulation**. (~45-90 seconds)\n"
+        "2. Point to metric cards: Radial order is 1.0. Arm count reads low -- detection limit.\n"
+        "3. Increase **omega to 2.5**. Click **Run Simulation** again.\n"
+        "4. Compare agent snapshot: Arms have rotated. Chirality is visible.\n"
+        "5. **Phase Explorer** tab. Select Sweep A. Load pregenerated. "
+        "Best stars at moderate k_radial, low omega.\n"
+        "6. **Movie Gallery** tab. Play star_formation_clean.gif. "
+        "Arms forming in real time from uniform initialization."
     )
 
     st.markdown("---")
     st.markdown("### Backup Plan")
     st.warning(
-        "If the app fails: open `outputs/panels/` in a file browser and present "
-        "the six PNG files (slide1 through slide5 + final_summary_panel) directly. "
-        "All phase diagrams are in `outputs/phase_diagrams/`. "
-        "Movies are in `outputs/movies/` and can be opened in any image viewer."
+        "If the app fails: open outputs/panels/ in a file browser and present "
+        "slide1 through slide5 + final_summary_panel directly. "
+        "Phase diagrams in outputs/phase_diagrams/. "
+        "Movies in outputs/movies/ open in any image viewer."
     )
 
     with st.expander("All pregenerated output files"):

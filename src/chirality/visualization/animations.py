@@ -19,8 +19,12 @@ except ImportError:
 from .style import (
     BG, INK, FIELD_CMAP, NEUTRAL, ACCENT, GREEN,
     CHIRALITY_CMAP, TITLE_FS, LABEL_FS, TICK_FS, BORDER,
+    ZOOID_PALETTE,
 )
 from ..model_library import ensure_dir
+
+_ZOOID_BG = "#0D1117"
+_ZOOID_CENTER_COLOR = "#FFFFFF"
 
 
 def _frames_to_gif(frames, output_path, fps):
@@ -195,7 +199,7 @@ def save_zooid_gif(
     assignments = zooid_result.assignments
     K = zooid_result.K
 
-    palette = [ACCENT, GREEN, "#7B6B8B", "#8B7355", "#4A7B8B", "#8B4A6B", "#6B8B4A"]
+    palette = ZOOID_PALETTE
 
     if zoom_center is not None:
         zc = np.array(zoom_center)
@@ -216,8 +220,8 @@ def save_zooid_gif(
         pos = zooid_result.positions[i]
         t = zooid_result.times[i] if i < len(zooid_result.times) else i
 
-        fig, ax = plt.subplots(figsize=(4, 4), facecolor=BG, dpi=dpi)
-        ax.set_facecolor(BG)
+        fig, ax = plt.subplots(figsize=(5, 5), facecolor=BG, dpi=dpi)
+        ax.set_facecolor(_ZOOID_BG)
         ax.set_xlim(*xlim)
         ax.set_ylim(*ylim)
         ax.set_aspect("equal")
@@ -226,16 +230,16 @@ def save_zooid_gif(
             mask = assignments == k
             col = palette[k % len(palette)]
             ax.scatter(pos[mask, 0], pos[mask, 1],
-                       s=10, color=col, alpha=0.80, linewidths=0, zorder=2)
+                       s=14, color=col, alpha=0.85, linewidths=0, zorder=2)
 
         ax.scatter(centers[:, 0], centers[:, 1],
-                   s=30, color=INK, marker="+", linewidths=1.2, zorder=4)
+                   s=40, color=_ZOOID_CENTER_COLOR, marker="+", linewidths=1.4, zorder=4)
 
-        ax.set_xlabel("x", fontsize=LABEL_FS, color=INK)
-        ax.set_ylabel("y", fontsize=LABEL_FS, color=INK)
-        ax.tick_params(colors=INK, labelsize=TICK_FS)
+        ax.set_xlabel("x", fontsize=LABEL_FS, color="#AAAAAA")
+        ax.set_ylabel("y", fontsize=LABEL_FS, color="#AAAAAA")
+        ax.tick_params(colors="#AAAAAA", labelsize=TICK_FS)
         for sp in ax.spines.values():
-            sp.set_edgecolor(BORDER)
+            sp.set_edgecolor("#333333")
         t_label = f"t={t:.1f}"
         ax.set_title(f"{title}  {t_label}" if title else t_label,
                      fontsize=LABEL_FS, color=INK)

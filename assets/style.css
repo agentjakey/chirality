@@ -1,6 +1,6 @@
 /*
   Chirality Atlas: Custom Streamlit Styles
-  Design: warm scientific notebook
+  Design: scientific field notebook -- high contrast, projector-safe
   Tested on Streamlit >= 1.30
 
   Palette:
@@ -10,42 +10,51 @@
     Green       #315C4C
     Panel       #FFFFFF / #EFE8DC
     Border      #DDD5C8
+    Dark panel  #0D1117 (simulation plots)
 */
 
-/* ---- Global background ---- */
+/* ---- Global background + base text ---- */
 .stApp {
     background-color: #F7F3EA;
 }
 
-/* ---- Typography ---- */
-html, body, [class*="css"] {
-    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', serif;
+html, body {
     color: #1F2421;
 }
 
-/* Headers */
+/* Force Streamlit's internal wrapper divs to use dark ink */
+.stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span {
+    color: #1F2421 !important;
+}
+
+/* ---- Typography ---- */
 h1 {
-    color: #1F2421;
-    font-size: 1.9rem;
+    color: #1F2421 !important;
+    font-size: 1.75rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     border-bottom: 2px solid #DDD5C8;
     padding-bottom: 0.35rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
 }
 h2 {
-    color: #1F2421;
-    font-size: 1.25rem;
+    color: #1F2421 !important;
+    font-size: 1.2rem;
     font-weight: 700;
     border-bottom: 1px solid #DDD5C8;
-    padding-bottom: 0.25rem;
-    margin-top: 1.2rem;
+    padding-bottom: 0.2rem;
+    margin-top: 1rem;
 }
 h3 {
-    color: #315C4C;
-    font-size: 1.05rem;
+    color: #315C4C !important;
+    font-size: 1.0rem;
     font-weight: 700;
-    margin-top: 1rem;
+    margin-top: 0.8rem;
+}
+
+p, li {
+    color: #1F2421;
+    line-height: 1.6;
 }
 
 /* ---- Tab bar ---- */
@@ -55,37 +64,39 @@ h3 {
     gap: 0;
 }
 .stTabs [data-baseweb="tab"] {
-    color: #555;
-    padding: 0.5rem 1.1rem;
+    color: #333333 !important;
+    padding: 0.5rem 1.2rem;
     font-size: 0.88rem;
-    font-family: 'Georgia', serif;
+    font-weight: 600;
     border-radius: 0;
     background-color: transparent;
 }
 .stTabs [aria-selected="true"] {
-    color: #C15A3A;
-    border-bottom: 2px solid #C15A3A;
+    color: #C15A3A !important;
+    border-bottom: 3px solid #C15A3A;
     font-weight: 700;
 }
 
 /* ---- Buttons ---- */
 .stButton > button {
     background-color: #315C4C;
-    color: #F7F3EA;
+    color: #F7F3EA !important;
     border: none;
     border-radius: 3px;
-    font-family: 'Georgia', serif;
     font-size: 0.9rem;
-    padding: 0.45rem 1.3rem;
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
     cursor: pointer;
     transition: background-color 0.15s;
 }
 .stButton > button:hover {
     background-color: #C15A3A;
-    color: #F7F3EA;
+    color: #F7F3EA !important;
 }
 .stButton > button[kind="primary"] {
     background-color: #C15A3A;
+    color: #F7F3EA !important;
+    font-weight: 700;
 }
 .stButton > button[kind="primary"]:hover {
     background-color: #A34830;
@@ -95,38 +106,51 @@ h3 {
 [data-testid="stMetric"] {
     background-color: #FFFFFF;
     border: 1px solid #DDD5C8;
-    border-radius: 4px;
+    border-radius: 5px;
     padding: 0.8rem 1rem;
-    box-shadow: 0 1px 3px rgba(31, 36, 33, 0.05);
+    box-shadow: 0 2px 4px rgba(31, 36, 33, 0.07);
 }
 [data-testid="stMetricLabel"] {
-    font-size: 0.8rem;
-    color: #666;
+    font-size: 0.78rem;
+    color: #333333 !important;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-family: 'Georgia', serif;
+    letter-spacing: 0.05em;
+    font-weight: 600;
 }
 [data-testid="stMetricValue"] {
-    font-size: 1.6rem;
-    color: #1F2421;
-    font-family: 'Georgia', serif;
+    font-size: 1.55rem;
+    color: #1F2421 !important;
+    font-weight: 700;
+}
+[data-testid="stMetricDelta"] {
+    color: #315C4C !important;
 }
 
 /* ---- Info / warning / success boxes ---- */
 [data-testid="stInfo"] {
-    background-color: #EAF0EC;
+    background-color: #E8F0EC;
     border-left: 4px solid #315C4C;
+    color: #1F2421 !important;
     border-radius: 0 4px 4px 0;
-    color: #1F2421;
+}
+[data-testid="stInfo"] p {
+    color: #1F2421 !important;
 }
 [data-testid="stWarning"] {
     background-color: #FFF3EE;
     border-left: 4px solid #C15A3A;
-    border-radius: 0 4px 4px 0;
+    color: #1F2421 !important;
+}
+[data-testid="stWarning"] p {
+    color: #1F2421 !important;
 }
 [data-testid="stSuccess"] {
-    background-color: #EAF0EC;
+    background-color: #E8F0EC;
     border-left: 4px solid #315C4C;
+    color: #1F2421 !important;
+}
+[data-testid="stSuccess"] p {
+    color: #1F2421 !important;
 }
 
 /* ---- Sidebar ---- */
@@ -136,8 +160,10 @@ section[data-testid="stSidebar"] {
 }
 
 /* ---- Sliders ---- */
-[data-testid="stSlider"] > div > div > div {
-    color: #C15A3A;
+[data-testid="stSlider"] label {
+    color: #222222 !important;
+    font-weight: 600;
+    font-size: 0.85rem;
 }
 
 /* ---- Expander ---- */
@@ -147,43 +173,41 @@ details[data-testid="stExpander"] {
     border-radius: 4px;
 }
 details[data-testid="stExpander"] summary {
-    color: #315C4C;
+    color: #1F2421 !important;
     font-weight: 700;
-    font-size: 0.92rem;
+    font-size: 0.93rem;
 }
 
 /* ---- Code blocks ---- */
 code {
     background-color: #EFE8DC;
     color: #315C4C;
-    padding: 0.1em 0.3em;
+    padding: 0.1em 0.35em;
     border-radius: 3px;
-    font-size: 0.88em;
+    font-size: 0.87em;
+    font-weight: 600;
 }
 .stCodeBlock {
-    background-color: #2A2E2B;
-    border-radius: 4px;
+    background-color: #1E2A24;
+    border-radius: 5px;
 }
 
 /* ---- Divider ---- */
 hr {
     border: none;
     border-top: 1px solid #DDD5C8;
-    margin: 1.5rem 0;
+    margin: 1.2rem 0;
 }
 
-/* ---- Selectbox ---- */
-[data-testid="stSelectbox"] label {
-    font-size: 0.85rem;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-/* ---- Input labels ---- */
-.stSlider label, .stSelectbox label, .stCheckbox label {
-    font-size: 0.85rem;
-    color: #444;
+/* ---- Select / input labels ---- */
+[data-testid="stSelectbox"] label,
+.stSlider label,
+.stSelectbox label,
+.stCheckbox label,
+[data-testid="stNumberInput"] label {
+    font-size: 0.84rem;
+    color: #222222 !important;
+    font-weight: 600;
     letter-spacing: 0.02em;
 }
 
@@ -191,8 +215,17 @@ hr {
 .sci-panel {
     background-color: #FFFFFF;
     border: 1px solid #DDD5C8;
-    border-radius: 4px;
-    padding: 1.2rem;
+    border-radius: 5px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 1rem;
+}
+
+/* ---- Hero panel (dark substrate for simulations) ---- */
+.sim-hero {
+    background-color: #0D1117;
+    border: 1px solid #333333;
+    border-radius: 5px;
+    padding: 1rem;
     margin-bottom: 1rem;
 }
 
@@ -201,45 +234,39 @@ hr {
     background-color: #FFFFFF;
     border: 1.5px solid #DDD5C8;
     border-left: 5px solid #C15A3A;
-    border-radius: 4px;
-    padding: 1.5rem 1.8rem;
-    margin-bottom: 1.5rem;
+    border-radius: 5px;
+    padding: 1.4rem 1.8rem;
+    margin-bottom: 1.4rem;
 }
 
-/* ---- Figure caption ---- */
-.fig-caption {
-    font-size: 0.82rem;
-    color: #777;
-    font-style: italic;
-    text-align: center;
-    margin-top: 0.3rem;
-}
-
-/* ---- Scrollable plot container ---- */
-.plot-container {
-    overflow: hidden;
-}
-
-/* ---- Model library card ---- */
-.model-card {
+/* ---- Movie card layout ---- */
+.movie-card {
     background-color: #FFFFFF;
     border: 1px solid #DDD5C8;
-    border-top: 3px solid #C15A3A;
-    border-radius: 4px;
-    padding: 1rem 1.1rem;
-    margin-bottom: 0.8rem;
-    height: 100%;
+    border-top: 3px solid #4A7BA8;
+    border-radius: 5px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+}
+.movie-card-title {
+    font-size: 1.0rem;
+    font-weight: 700;
+    color: #1F2421;
+    margin-bottom: 0.5rem;
 }
 
 /* ---- What to notice callout ---- */
 .notice-box {
-    background-color: #EAF0EC;
+    background-color: #E8F0EC;
     border-left: 4px solid #315C4C;
     border-radius: 0 4px 4px 0;
-    padding: 0.8rem 1rem;
-    margin: 1rem 0;
+    padding: 0.7rem 1rem;
+    margin: 0.8rem 0;
     font-size: 0.9rem;
-    color: #1F2421;
+    color: #1F2421 !important;
+}
+.notice-box strong, .notice-box p {
+    color: #1F2421 !important;
 }
 
 /* ---- Limitation box ---- */
@@ -247,10 +274,13 @@ hr {
     background-color: #FFF3EE;
     border-left: 4px solid #C15A3A;
     border-radius: 0 4px 4px 0;
-    padding: 0.8rem 1rem;
-    margin: 1rem 0;
+    padding: 0.7rem 1rem;
+    margin: 0.8rem 0;
     font-size: 0.9rem;
-    color: #1F2421;
+    color: #1F2421 !important;
+}
+.limit-box strong, .limit-box code {
+    color: #C15A3A !important;
 }
 
 /* ---- App header ---- */
@@ -258,30 +288,83 @@ hr {
     display: flex;
     align-items: center;
     gap: 0.9rem;
-    padding: 0.6rem 0 0.4rem 0;
+    padding: 0.5rem 0 0.3rem 0;
     border-bottom: 2px solid #DDD5C8;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
 }
 .app-title {
-    font-size: 1.55rem;
+    font-size: 1.45rem;
     font-weight: 700;
-    color: #1F2421;
+    color: #1F2421 !important;
     letter-spacing: -0.02em;
     margin: 0;
-    line-height: 1.15;
+    line-height: 1.1;
 }
 .app-subtitle {
-    font-size: 0.88rem;
-    color: #666;
+    font-size: 0.86rem;
+    color: #444444 !important;
     font-style: italic;
     margin: 0;
+    font-weight: 400;
 }
 
-/* ---- Metric row ---- */
-.metric-row {
-    display: flex;
-    gap: 0.6rem;
-    flex-wrap: wrap;
+/* ---- Figure caption ---- */
+.fig-caption {
+    font-size: 0.82rem;
+    color: #555555;
+    font-style: italic;
+    text-align: center;
+    margin-top: 0.3rem;
+}
+
+/* ---- Model library card ---- */
+.model-card {
+    background-color: #FFFFFF;
+    border: 1px solid #DDD5C8;
+    border-top: 3px solid #C15A3A;
+    border-radius: 5px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.8rem;
+    height: 100%;
+}
+
+/* ---- Feature checklist item ---- */
+.feature-item {
+    margin: 0.3rem 0;
+    padding: 0.4rem 0.8rem;
+    border-radius: 3px;
+    font-size: 0.88rem;
+    color: #1F2421;
+}
+
+/* ---- Phase diagram description ---- */
+.phase-desc {
+    background-color: #FFFFFF;
+    border: 1px solid #DDD5C8;
+    border-radius: 4px;
+    padding: 0.8rem 1rem;
     margin: 0.8rem 0;
+    font-size: 0.9rem;
+    color: #1F2421;
+    line-height: 1.5;
 }
 
+/* ---- Streamlit image captions ---- */
+[data-testid="stImage"] > div > small {
+    color: #555555 !important;
+    font-size: 0.82rem;
+}
+
+/* ---- Radio button labels ---- */
+.stRadio label {
+    color: #1F2421 !important;
+    font-weight: 500;
+}
+.stRadio > div > label {
+    color: #1F2421 !important;
+}
+
+/* ---- Checkbox ---- */
+.stCheckbox label p {
+    color: #1F2421 !important;
+}
