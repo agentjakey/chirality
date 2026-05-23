@@ -1,66 +1,79 @@
 # Known Limitations
 
-## Particle simulations
+## Star Ascidian Model (primary)
 
-**O(N^2) scaling**: The Vicsek neighbor search and soft repulsion both loop over all
-pairs. For N > 400, runtime grows quadratically. Real-scale active matter simulations
-use spatial data structures (cell lists, kd-trees) to achieve O(N) neighbor lookups.
-This project is sized for N = 100-400 as a demonstration tool.
+**Arm count is a parameter, not emergent.**
+n_arms is passed to the zooid agent model. The angular repulsion spacing assumes
+n_arms arms per center. The model does not explain why Botryllus has 7 arms.
+It only shows that given n_arms=7, the agent forces produce ~7 evenly-spaced lobes.
 
-**Periodic MSD**: Mean squared displacement in a periodic box is valid only when
-displacement is much less than L. Chiral particles that travel many multiples of L
-before being wrapped will have artificially small MSD. For quantitative MSD analysis,
-use larger boxes or track unwrapped positions.
+**Arm count detection is unreliable at low agent density.**
+With n_per_arm=3, each arm contributes 3 points to a 36-bin angular histogram.
+The scipy.signal.find_peaks algorithm requires a visible peak, which 3 agents
+often do not produce. The metric typically reads 1-3 detected arms even when the
+geometry clearly shows 7. The radial_order score is more reliable. Both are reported;
+judges should use radial_order as the primary geometric quality indicator.
 
-**Chirality as a free parameter**: The omega parameter in the chiral ABP is
-phenomenological. Real microswimmers have chirality that arises from their shape
-and propulsion mechanism. The radius of circular motion R_c = v0 / |omega| is a
-useful physical interpretation, but connecting omega to any specific organism requires
-independent calibration.
+**Phase diagram at reduced resolution.**
+The phase diagram sweeps use grid_size=32 and n_field_steps=1500 for the GM field
+and n_steps=150 for agents. Full-resolution runs use grid_size=64, n_field_steps=3000,
+n_steps=400. Phase boundaries at full resolution would shift, possibly significantly
+for the GM-dependent metrics (n_centers, spacing_quality).
 
-**No hydrodynamics**: All simulations use point particles with no fluid-mediated
-interactions. Bacterial suspensions, for example, have long-range hydrodynamic
-interactions that can qualitatively change the collective behavior (e.g., pusher vs
-puller swimmers). This project does not capture those effects.
+**O(N^2) excluded volume.**
+The pairwise excluded volume loop is O(N^2) in agent count. For default presets
+with K=4, n_arms=7, n_per_arm=3, N=84 agents total, this is fast. For N > 500
+the excluded volume computation becomes a bottleneck.
 
-**Euler integration**: Time integration is explicit Euler throughout. This is
-first-order accurate. For precision over long times, Runge-Kutta would be better.
-The current implementation is accurate enough for qualitative phase diagrams.
+**No biological mechanism.**
+The model has no Botryllus biochemistry, no signaling molecules (Wnt, BMP, Notch),
+no blastogenic timing, no colonial immune recognition, no substrate mechanics.
+It is a minimal geometric model. The claim is only that the spatial pattern geometry
+can arise from local rules -- not that these specific rules operate in the real organism.
 
-## Pattern simulations
+**2D only.**
+Real Botryllus colonies are thin sheets on a 3D substrate. The model is 2D.
+Curvature, substrate mechanics, and depth-dependent signaling are not captured.
 
-**Explicit Euler for Gray-Scott**: The standard Gray-Scott simulations use explicit
-Euler with dt=1.0. This is stable for the default diffusion coefficients (Du=0.16,
-Dv=0.08) but will blow up for larger dt or Du. The stability condition is roughly
-D * dt / dx^2 < 0.25 in 2D. With dx=1, dt=1, Du=0.16 this is satisfied (barely).
+**Euler integration.**
+Both layers use first-order Euler integration. This is appropriate for qualitative
+phase diagrams but not for precision calibration against experimental data.
 
-**Lattice artifacts**: The discrete Laplacian on a square grid introduces fourfold
-rotational symmetry artifacts. Real continuous Laplacians have circular symmetry.
-For high-resolution studies, spectral methods (FFT-based Laplacian) are more accurate.
+---
 
-**Chiral source is not a real biological mechanism**: The rotating source in
-`simulate_chiral_source_gray_scott` is a toy construction to demonstrate symmetry
-breaking. It has no direct biological analog. Real chiral pattern formation (e.g.,
-in left-right body axis determination) involves specific signaling molecules and
-tissue geometry that this model does not capture.
+## Metrics Limitations
 
-**Gray-Scott is not a specific organism model**: The Gray-Scott equations are a
-mathematical toy that produces Turing-like patterns. They are useful for qualitative
-intuition but should not be interpreted as a model of any specific biological system
-without careful parameter fitting and experimental validation.
+**swirl_score is unsigned per-center, signed total.**
+The metric returns the mean signed tangential velocity across centers. If two centers
+have opposite chirality (racemic mode), they cancel. The magnitude of chirality
+at each center is not reported separately.
 
-**Phase sweep resolution**: The sweep grids (6x6 or 8x8) are coarse due to runtime
-constraints. Fine-grained phase boundaries require denser grids and longer simulations.
-The phase diagrams here are illustrative, not publication-quality maps.
+**merge_score is O(N^2) and slow at high N.**
+The merge detection loops over all cross-center agent pairs. At N > 300 this becomes
+slow enough to affect interactive use. Not an issue for default presets.
 
-## Metrics
+**angular_uniformity depends on find_peaks quality.**
+If arm_count is under-detected (see above), uniformity is computed from fewer peaks
+and may be misleadingly high (1 peak has undefined spacing, defaults to 0).
 
-**Pattern asymmetry signal is small**: The left-right asymmetry induced by the chiral
-source is typically on the order of 0.001-0.005 (in units of v concentration). This
-is a small fraction of the typical v variation (~0.1-0.2 std). Statistical
-significance would require ensemble averaging over multiple seeds, which is not done here.
+---
 
-**Cluster count sensitivity**: The cluster count metric depends strongly on the
-threshold value (default 0.1). Different thresholds produce very different counts.
-The metric should be interpreted as a rough indicator of pattern morphology, not
-a precise measurement.
+## Reference Models (secondary)
+
+**Gray-Scott explicit Euler.**
+The Gray-Scott model uses explicit Euler with dt=1.0 and dx=1.0 grid. Stability
+requires D * dt / dx^2 < 0.25. With Du=0.16 this is 0.16 -- safe but marginal.
+Large parameter deviations may require reducing dt.
+
+**Chiral source is not a biological mechanism.**
+The rotating Gaussian source in simulate_chiral_source_gray_scott is a toy construction.
+No specific organism uses this mechanism. It is included as a minimal demonstration
+of how a broken symmetry in a boundary condition produces a measurable field asymmetry.
+
+**Phase sweep resolution (all sweeps).**
+All phase sweeps use 5x5 grids. Qualitative trends are correct; quantitative
+boundaries require denser grids and longer per-point simulations.
+
+**O(N^2) Vicsek neighbor search.**
+The Vicsek model uses an all-pairs distance computation. Fine for N <= 400.
+Not suitable for large-scale simulations without cell lists or kd-trees.

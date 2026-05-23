@@ -1,83 +1,127 @@
-# Speaker Script: Chirality Atlas
+# Speaker Script: Chirality Atlas -- Star Ascidian Edition
 
-Total time: 4 minutes (hard cap at 5)
-
----
-
-## Slide 1 (45 sec)
-
-"The core question is simple: if every particle in a system has a slight left or right bias in how it moves, does the whole system behave differently?
-
-The answer from biology seems to be yes -- bacteria circle near surfaces, embryos reliably pick a left-right axis, and rotating cytoskeletal structures drive asymmetric tissue folding. But the mechanism in each case is different. What we want is a minimal model.
-
-This project takes two computational tutorials you already know -- active particle models and reaction-diffusion -- and adds one control knob: omega, a chirality parameter."
-
-[Transition: "Let me show you the two models."]
+Total time: 5 minutes (hard cap). Slide times are targets, not exact.
 
 ---
 
-## Slide 2 (45 sec)
+## Slide 1 (45 sec): Target
 
-"The particle track extends the active Brownian particle model from Tutorial 1. We add a rotation rate omega to each particle's orientation update. Small omega: particles trace large lazy circles. Large omega: tight circles. We can also assign different omega to different particles -- left-handed, right-handed, or a mix.
+"This is a star ascidian. It is a colonial animal that lives in shallow water
+and arranges its individuals -- called zooids -- into star-shaped systems.
+Each star has a central opening and about seven animals radiating out in discrete arms.
+Multiple stars tile the colony surface without merging. And in some species,
+the arms rotate -- every star in the colony twists the same direction.
 
-The pattern track extends the Gray-Scott model from Tutorial 2. We add three modifications: a linear feed gradient, a circular obstacle, and a rotating injection point that we call the chiral source. The chiral source is a toy model -- it is not meant to represent any specific organism.
+Our question is simple: can two local physical rules produce this geometry
+from scratch? A spacing rule for where the stars go, and a force rule for how
+the arms form?"
 
-Both models are direct line-for-line extensions of the tutorial code."
-
-[Transition: "Let us see what the baseline looks like."]
-
----
-
-## Slide 3 (45 sec)
-
-"Before adding chirality, we check that the baselines reproduce expected behavior. Vicsek flocking at low noise gives polar order near 0.95 -- highly ordered. Gray-Scott at F=0.035 and k=0.065 gives self-organized spots, pattern strength around 0.10.
-
-These phase diagrams show how polar order and pattern strength vary across the parameter space. The grids are coarse -- 6x6 -- because we are working on a laptop. The qualitative shapes match what the tutorials predict."
-
-[Transition: "Now the creative part."]
+[point to schematic, then to simulation still]
 
 ---
 
-## Slide 4 (60 sec)
+## Slide 2 (50 sec): Model
 
-"When we turn on chirality in the particle model, something interesting happens. Polar order goes down -- individual particles curve in circles instead of aligning with neighbors. But a different kind of order appears: swirl. With a circular boundary, particles orbit the wall. That is the edge current you see on the right.
+"We use a two-layer model. The layers run in sequence and have no feedback between them.
 
-The racemic case -- 50% left, 50% right -- is the control. The two populations compete and cancel out. Swirl index stays near zero.
+Layer one is a Gierer-Meinhardt reaction-diffusion system. One chemical activates itself
+but also triggers a faster-diffusing inhibitor. This short-range activation,
+long-range inhibition structure is why reaction-diffusion is called a Turing mechanism.
+It produces spots at regular spacing, controlled by the ratio of the two diffusion rates.
+Those spots become our star center positions.
 
-In the pattern model, the chiral source introduces a small but detectable left-right asymmetry. Without the source, the L-R asymmetry is less than 0.0001 -- essentially zero. With omega=0.1, it rises to around 0.002. That is small, but it is real and reproducible with fixed seeds.
+Layer two is an active particle model. Each zooid is a self-propelled agent
+with four forces: a pull toward its home center, a spring toward a ring at the target radius,
+angular repulsion that pushes agents from different arms apart, and optional chirality --
+a rotation rate omega that twists the orientation over time.
 
-The key insight: chirality and noise are competing control knobs. Chirality suppresses polar order but creates a different structural order. You need the right metric to see it."
+The key creative step was the angular repulsion. Standard active matter models
+do not have this. It is what converts a ring of agents into discrete arms."
 
-[Transition: "What does this mean biologically?"]
-
----
-
-## Slide 5 (45 sec)
-
-"The boundary edge current is a known phenomenon in bacterial motility near surfaces. Right-handed bacteria tend to orbit clockwise when near a wall. Our model reproduces that qualitatively.
-
-The chiral source is more speculative. It is a proof of concept that a rotating signal source can break left-right symmetry in a pattern-forming system. The biological analogy would be a rotating cilium or cytoskeletal structure biasing morphogen distribution -- but we are not claiming this is a model of any real pathway.
-
-The limitations are real: coarse phase diagrams, Euler integration, toy chiral source. We describe them in the docs.
-
-The takeaway: handedness is not just a curiosity. It can reshape which order parameters matter and what structures form."
+[point to equations on slide]
 
 ---
 
-## If a judge asks "what did you actually add?"
+## Slide 3 (50 sec): Simulation
 
-"We added three things. First, a chirality parameter omega to both tutorial models -- one line of code in the orientation update for particles, a rotating injection function for the pattern model. Second, new metrics to detect the order that chirality creates -- swirl index for particles, L-R asymmetry for fields. Without these metrics, you would look at chirality and see only disorder. Third, a Streamlit app and systematic phase diagrams connecting the two tracks under one question.
+"Starting from agents scattered randomly around each center, the forces organize them
+into radial arms in about 400 timesteps. You can see it in the animation.
 
-The scientific claim is modest and we believe it is defensible: omega is a control knob, and the effects are measurable."
+At the end of the run, we measure three things: radial order -- how many agents
+are near the target ring; arm count -- how many arms we detect per center;
+and center spacing -- whether the stars maintain their distance.
+
+With the default parameters, radial order is above 0.8, which means most agents
+are well-confined to the ring. Arm count is harder to measure -- with only three
+agents per arm, the angular histogram is sparse and the peak detection is noisy.
+That is an honest limitation of the metric, not the model.
+
+When we add chirality at omega equals 2.5, the arms rotate measurably. The swirl score
+goes from near zero to about 0.3. The arm structure is preserved -- just twisted."
+
+[show clean GIF, then chiral GIF]
 
 ---
 
-## If a judge asks "is the chiral source realistic?"
+## Slide 4 (50 sec): Phase diagram
 
-"No, not directly. It is a toy model. A real symmetry-breaking mechanism in development involves specific signaling molecules and directional transport. What we show is that even a simple rotating source can introduce a measurable left-right bias. That is a proof of concept, not a biological claim."
+"The phase diagram sweeps radial spring strength and chirality simultaneously.
+Each point in the grid is a separate simulation. The left heatmap shows star-likeness.
+The right shows swirl.
+
+The green region in the top left -- high radial spring, low chirality -- is our
+target regime. That is where the model produces the cleanest stars.
+
+As we increase chirality, star-likeness stays reasonable but swirl increases.
+The arms rotate without losing coherence until chirality is very high.
+At the bottom -- low radial spring -- agents escape the ring and fragmentation rises.
+
+The other phase diagram sweeps noise versus angular repulsion.
+High noise fragments the stars. Strong angular repulsion partially compensates,
+but only up to a point. Biology presumably operates in the moderate-noise regime."
+
+[point to optimal region, then high-omega column]
 
 ---
 
-## If a judge asks "why are the swirl index values so small?"
+## Slide 5 (45 sec): Insight and limits
 
-"The swirl index is a noisy quantity in a small, short simulation. With N=200 particles and 800 steps, you would not expect large values. The point is that it is systematically larger with chirality than without, and it scales with omega in the phase diagram. It is a relative measurement, not an absolute one."
+"The model explains the geometric properties that follow from the two physical rules.
+Center spacing follows from the Turing instability. Arm structure follows from
+the radial spring and angular repulsion. Chirality-induced rotation follows from omega.
+
+What it does not explain: arm count is a parameter, not emergent.
+There is no Botryllus biochemistry, no colonial immune recognition,
+no developmental timing. This is a minimal geometric model, not a developmental model.
+
+On LLM use: we used Claude for the IMEX scheme, the vectorized force computations,
+and the phase sweep loops. The code was verified against expected physical behavior
+after every prompt. One bug slipped through -- a numpy broadcasting error in the
+swirl metric -- and was caught by comparing output shapes to the manually-written
+force code. The lesson: LLMs write fast but do not catch shape mismatches.
+
+Takeaway: a two-stage mechanism can turn local rules into star-shaped colonial order.
+Chirality adds rotation without destroying the structure."
+
+[pause]
+
+---
+
+## Transitions
+
+Slide 1 to 2: "So what are the rules? Let me show you the model."
+
+Slide 2 to 3: "Here is what that model actually does when you run it."
+
+Slide 3 to 4: "One run is not enough. Let us sweep the parameter space."
+
+Slide 4 to 5: "Good. Now -- what does this tell us, and what does it not?"
+
+---
+
+## Backup
+
+If the live demo fails: navigate to Tab 4 (Movie Gallery) and show the pre-generated GIFs.
+If GIFs are missing: show `outputs/panels/slide3_simulation_sequence.png` from file explorer.
+If the app crashes entirely: open the notebook (`notebooks/Star_Ascidian_Chirality_Atlas.ipynb`)
+and scroll to Section 6 and Section 8. All figures regenerate in under 2 minutes.

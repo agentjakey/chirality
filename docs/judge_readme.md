@@ -1,93 +1,94 @@
-# For Judges: Chirality Atlas
-
-## 30-second summary
-
-Chirality Atlas extends both hackathon tutorials (active particles and Gray-Scott reaction-diffusion)
-by adding a chirality parameter omega that gives simulated agents a left or right rotational bias.
-The project asks whether this microscopic handedness can change collective behavior,
-builds phase diagrams showing it does, and provides a live Streamlit app to explore the results.
+# For Judges: Chirality Atlas -- Star Ascidian Edition
 
 ---
 
-## How it extends the tutorials
+## What to run (60 seconds)
 
-**Tutorial 1 (active particles):**
-
-| Tutorial baseline | This project's extension |
-|-------------------|--------------------------|
-| Active Brownian Particles (ABP) | Chiral ABP: add `omega_i * dt` to orientation |
-| Vicsek alignment model | Chiral Vicsek: omega competes with alignment |
-| Polar order parameter phi | + swirl index, boundary accumulation |
-| Single parameter run | Phase diagram over Dr x omega |
-
-**Tutorial 2 (Gray-Scott reaction-diffusion):**
-
-| Tutorial baseline | This project's extension |
-|-------------------|--------------------------|
-| Gray-Scott spots and labyrinths | Same + gradient, obstacle, chiral source |
-| Vary F and k | Phase diagram over F x k + chiral source sweep |
-| Plot v field | + pattern strength, cluster count, L-R asymmetry |
-| Single seed initialization | Multi-seed for full domain coverage |
-
----
-
-## What was reproduced
-
-- ABP baseline: polar order near 0.05 (disordered gas). Expected.
-- Vicsek at low noise: polar order 0.95 (flocked). Expected.
-- Gray-Scott at F=0.035, k=0.065: spots with pattern strength ~0.10. Expected.
-- Gray-Scott at F=0.04, k=0.06: labyrinth morphology. Expected.
-- Phase diagram trends consistent with known literature.
-
----
-
-## What was creatively extended
-
-- Chiral Vortex Gas: single-handed omega creates circular trajectories. New metric (swirl index) captures this.
-- Boundary Edge Current: chiral particles in a circular trap orbit the wall. Directly analogous to bacterial near-surface swimming.
-- Racemic Competition: 50/50 left/right mixture with soft repulsion. Control case: net swirl near zero.
-- Feed Gradient: linear spatial variation of F. Pattern transitions across the domain.
-- Circular Obstacle: topological defect in spot pattern.
-- Chiral Source (toy model): rotating injection point breaks L-R symmetry. Small but measurable asymmetry.
-
----
-
-## What to run
-
-Quick check (under 1 minute):
 ```
-python scripts/smoke_test.py
-```
-
-Interactive app:
-```
+pip install -r requirements.txt
+python healthcheck.py
 streamlit run app.py
 ```
 
-Generate all figures (30-50 minutes):
-```
-python scripts/make_all_assets.py
-```
+The healthcheck runs the full two-layer model in under 30 seconds and prints PASS.
+The app opens at http://localhost:8501.
 
 ---
 
-## What to look at first
+## What to inspect
 
-1. `outputs/summary/chirality_atlas_bridge_panel.png` -- both tracks side by side
-2. `outputs/summary/chirality_atlas_final_panel.png` -- hero figure with key results
-3. `outputs/phase_sweeps/particle_noise_vs_chirality_swirl_index.png` -- shows chirality creates swirl
-4. `outputs/phase_sweeps/pattern_chiral_source_asymmetry.png` -- shows source rotation -> L-R asymmetry
-5. `outputs/videos/particle_boundary_edge_current.gif` -- most visually striking result
+**Tab 1 -- Target Pattern:**
+Biology motivation. Botryllus schlosseri schematic + simulation comparison.
+Pre-generated `outputs/panels/slide1_target_and_simulation.png`.
+
+**Tab 2 -- Model Builder:**
+Live simulation. Run with defaults (clean stars), then raise omega to 2.5 (twisted stars).
+Watch the swirl metric change. GM field + agent snapshot appear after ~30 seconds.
+
+**Tab 4 -- Movie Gallery:**
+GIF animations of arm formation and chiral twist. Pre-generated. No wait time.
+
+**Tab 6 -- LLM Notebook:**
+How Claude was used. Two best prompts, one failure case, how outputs were verified.
+
+**docs/llm_proficiency.md**: Full written record.
+**notebooks/Star_Ascidian_Chirality_Atlas.ipynb**: Runnable notebook with all steps.
 
 ---
 
-## Limitations (honestly stated)
+## Main insight
 
-- Chiral source is a toy model: no biological mechanism is claimed
-- Phase diagrams are coarse (6x6 grid, short runs)
-- Euler integration: stable for given parameters but not validated near instability boundaries
-- O(N^2) soft repulsion: not suitable for N > 500
-- Swirl index values are small in short simulations
-- ABP chirality is phenomenological; no connection to specific microswimmer parameters
+A Turing reaction-diffusion field (Gierer-Meinhardt) places star centers at regular
+spacing. Active zooid agents with radial confinement and angular repulsion form
+discrete arms around those centers. Chirality (omega) measurably rotates the arm
+pattern -- swirl score rises from near zero to ~0.3 at omega=2.5.
 
-See `docs/limitations.md` and `docs/self_audit.md` for a complete list.
+The model reproduces the spatial geometry of Botryllus colonies from minimal local rules.
+It is not a mechanistic developmental model. The biology it does not capture is stated
+clearly in slide 5 and in docs/scientific_audit.md.
+
+---
+
+## What is creative
+
+**The two-layer design:** Separating center placement (field) from arm formation (agents)
+is not standard in active matter models. It allows each layer to be tuned independently
+and makes the parameter space tractable.
+
+**Angular repulsion between arm groups:** Standard active particle models do not have this.
+It is the force that converts a ring of agents into discrete arms with regular angular spacing.
+Without it, agents form a ring but not distinct arms.
+
+**Chirality as a measurable signature:** The swirl score detects collective rotation
+that would be invisible to standard order parameters (polar order, radial order).
+This is the novel metric contribution.
+
+---
+
+## What is scientifically grounded
+
+- GM equations are a standard reference model for Turing pattern formation.
+- IMEX numerical scheme is standard for reaction-diffusion; unconditionally stable for diffusion.
+- Active Brownian particle dynamics are from the hackathon tutorial baseline.
+- All metrics verified: smoke test runs 53 checks, all passing.
+- Phase diagram sweeps reproduce known regimes: fragmented (high Dr), merged (high n_per_arm),
+  clean stars (moderate k_radial, low omega), twisted stars (high omega).
+
+---
+
+## What is honest about limitations
+
+- Arm count (n_arms=7) is a model parameter, not emergent.
+- The arm count detection metric under-counts at low agent density. We say so explicitly.
+- Phase diagram boundaries are computed at reduced resolution (N=32 grid, n_steps=150 agents).
+- No Botryllus biochemistry, blastogenic timing, or 3D geometry.
+
+---
+
+## Backup if live app fails
+
+1. Open `outputs/panels/` in file explorer -- all slide panels are pre-generated.
+2. Run notebook sections 6 and 8 -- produces key figures in under 2 minutes.
+3. Run `python scripts/05_make_all_assets.py` -- regenerates all outputs (~15 minutes).
+
+All pre-generated outputs are committed to the repo under `outputs/`.

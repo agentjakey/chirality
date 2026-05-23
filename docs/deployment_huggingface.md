@@ -1,9 +1,9 @@
 # Deployment: Hugging Face Spaces (Docker SDK)
 
-This app is deployed using the Docker SDK on Hugging Face Spaces.
-It runs Streamlit on port 7860, which Spaces routes to the public URL.
+Chirality Atlas runs on Hugging Face Spaces using the Docker SDK.
+Streamlit serves on port 7860, which Spaces routes to the public URL.
 
-No GPU is required. No API keys. No external network calls at runtime.
+No GPU required. No API keys. No external network calls at runtime.
 
 ---
 
@@ -19,28 +19,27 @@ No GPU is required. No API keys. No external network calls at runtime.
 
 ---
 
-## Step 2: Push the repo to the Space
+## Step 2: Push the repo
 
-Hugging Face Spaces use a Git remote. Replace `YOUR_USERNAME` below.
+Hugging Face Spaces use a Git remote.
 
 ```bash
-# Add the HF Space as a remote
+# Add the HF Space as a remote (replace YOUR_USERNAME)
 git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/chirality-atlas
 
 # Push
 git push hf main
 ```
 
-If prompted for credentials, use your Hugging Face username and an access token
-(not your password). Tokens are created at https://huggingface.co/settings/tokens
+If prompted for credentials: use your Hugging Face username and a write-access token.
+Create tokens at https://huggingface.co/settings/tokens.
 
 ---
 
 ## Step 3: Confirm port 7860
 
-The Dockerfile already uses `--server.port=7860 --server.address=0.0.0.0`.
-Hugging Face Spaces automatically maps port 7860 to the public URL.
-
+The Dockerfile already sets `--server.port=7860 --server.address=0.0.0.0`.
+Hugging Face Spaces automatically routes port 7860 to the public URL.
 No additional configuration is needed.
 
 ---
@@ -48,63 +47,77 @@ No additional configuration is needed.
 ## Step 4: Wait for the build
 
 After pushing, HF Spaces will:
-1. Build the Docker image (2-5 minutes, first build)
-2. Run `python healthcheck.py` to verify the environment
+1. Build the Docker image (2-5 minutes, first build; ~30 seconds for rebuilds)
+2. Run `python healthcheck.py` inside the container
 3. Start Streamlit on port 7860
 
-Watch the build log in the Spaces interface. If it fails, read the log for errors.
+Watch the build log in the Spaces interface. If it fails, read the log for the
+failing check and fix the issue locally before pushing again.
 
 ---
 
-## Step 5: Use pre-generated outputs for demo
+## Step 5: Pre-generated assets (recommended for demo)
 
-The Docker image does not include `outputs/` (it is in `.dockerignore`).
+The Docker image does not include `outputs/` by default (it is in `.dockerignore`).
 The app generates figures on demand when you click Run buttons in each tab.
 
-For a demo where you want pre-computed phase diagrams to appear instantly:
-1. Run `python scripts/make_all_assets.py` locally
-2. Remove `outputs/` from `.dockerignore` temporarily
-3. Push to HF Spaces
+For a demo where pre-computed phase diagrams appear instantly:
 
-This makes the image larger (~100-200 MB for figures + GIFs) but avoids wait times
-during live demo.
+1. Generate assets locally: `python scripts/05_make_all_assets.py`
+2. Remove or comment out the `outputs/` line in `.dockerignore`
+3. Re-push to HF Spaces
+
+The image will be ~150-300 MB larger but all figures are available without a wait.
+
+Note: GIF files may be large (1-5 MB each). If image size is a concern,
+include only `outputs/panels/` (the slide PNG panels) and omit movies.
+
+---
+
+## Local Docker test (before pushing)
+
+```bash
+docker build -t chirality-atlas-star .
+docker run -p 7860:7860 chirality-atlas-star
+```
+
+Open http://localhost:7860 to verify before pushing to HF.
 
 ---
 
 ## Troubleshooting
 
-**Build fails at pip install**: check that all packages in requirements.txt are
-available on PyPI and have no platform-specific constraints.
+**Build fails at pip install:**
+Some packages require build tools in the slim image. The Dockerfile already installs
+`libopenblas-dev` and `libglib2.0-0`. If you see additional missing library errors,
+add them to the `apt-get install` line in the Dockerfile.
 
-**Healthcheck fails**: the build log will show which check failed.
-Common cause: scipy or imageio not installed correctly in the slim image.
-Fix: add `RUN apt-get update && apt-get install -y libopenblas-dev` before pip install.
+**Healthcheck fails:**
+The build log shows which check failed. Most common causes:
+- scipy not finding OpenBLAS: fixed by `libopenblas-dev` (already in Dockerfile)
+- Wrong working directory: the CMD runs from `/app`, which is the repo root
 
-**App starts but pages are blank**: Streamlit needs `--server.headless=true` (already set).
-If you see XSRF or CORS errors, check that `--server.enableCORS=false` is set.
+**App starts but pages are blank:**
+Check that `--server.headless=true` is set in the CMD (it is). If XSRF or CORS
+errors appear in the browser console, check that `--server.enableCORS=false`
+and `--server.enableXsrfProtection=false` are set (they are).
 
-**Slow first load**: the first run generates matplotlib caches and compiles imports.
-Subsequent loads are faster.
+**Out of memory:**
+HF free-tier Spaces have approximately 2 GB RAM.
+Default GM preset uses grid_size=64 which requires about 200 MB.
+If OOM occurs, reduce grid_size in the preset defaults in
+`src/chirality/star_ascidian/hybrid_model.py` (change 64 to 32).
 
-**Out of memory**: Hugging Face free-tier Spaces have limited RAM.
-Reduce pattern grid size in `src/chirality/presets.py` (e.g., nx=ny=128 instead of 256).
+**Slow first load:**
+The first run compiles matplotlib font caches and Python bytecode.
+Subsequent loads in the same session are faster.
 
 ---
 
 ## Security notes
 
-- No API keys, secrets, or user data.
+- No API keys, secrets, or credentials anywhere in the codebase.
 - No outgoing network calls at runtime.
 - All simulations use fixed seeds; outputs are deterministic.
-- Generated figures are not persisted between restarts (unless you mount a volume).
-
----
-
-## Local Docker test
-
-```bash
-docker build -t chirality-atlas .
-docker run -p 7860:7860 chirality-atlas
-```
-
-Open http://localhost:7860 to test locally before pushing to HF.
+- Generated figures are not persisted between container restarts.
+- User inputs (sliders) only affect local simulation parameters; nothing is stored.

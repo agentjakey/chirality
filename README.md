@@ -1,172 +1,199 @@
-# Chirality Atlas: Particles, Patterns, and Handedness in Active Matter
+# Chirality Atlas: Star Ascidian Edition
 
 UCSD Vibe Coding Active Matter 2026 Hackathon
 
----
-
-## What it is
-
-This project unifies two computational tracks around a single scientific question:
-**can microscopic handedness act as a control knob for macroscopic biological order?**
-
-Track 1 -- particles: Active Brownian Particles and Vicsek-style flocking, extended
-with per-particle chirality. Chiral particles trace circles, accumulate at boundaries,
-and form edge currents. The transition between ordered and disordered states changes
-qualitatively when you add a rotation rate.
-
-Track 2 -- patterns: Gray-Scott reaction-diffusion, extended with a linear feed
-gradient, a circular obstacle, and a rotating point source (the "chiral source").
-The chiral source introduces handedness into an otherwise symmetric pattern-forming system,
-producing a small but detectable left-right asymmetry.
-
-Both tracks are direct extensions of the organizer tutorials. See `docs/tutorial_connections.md`
-for a line-by-line mapping.
+**Can local rules generate a living star pattern?**
 
 ---
 
-## Why it fits the hackathon
+## Project Pitch
 
-The hackathon asks participants to extend the tutorials by adding chirality, measuring
-something, and interpreting the result. This project does exactly that, twice -- once
-for each tutorial track -- and adds a systematic phase diagram sweep over the key parameters.
+*Botryllus schlosseri* (the star ascidian) arranges its zooids into radial star-shaped
+systems: 7 arms per star, multiple stars per colony, consistent spacing, and measurable
+chirality in some strains. We ask whether two local physical rules can reproduce this
+geometry from scratch.
+
+Our answer is a two-layer hybrid model:
+
+- **Layer 1:** A Gierer-Meinhardt reaction-diffusion Turing field places star centers
+  at quasi-regular spacing (short-range activation, long-range inhibition, Dh/Da=100).
+
+- **Layer 2:** Active zooid agents with radial confinement, angular repulsion, and
+  optional chirality (omega) self-organize into radial arms around those centers.
+
+Adding chirality measurably rotates the arm pattern. The swirl score rises from near
+zero to ~0.3 at omega=2.5. The arm structure is preserved.
+
+A live Streamlit app lets you adjust parameters, run simulations, and explore the
+phase diagram. A Jupyter notebook walks through every step from observation to conclusion.
 
 ---
 
 ## Quickstart
 
-```bash
-git clone https://github.com/agentjakey/chirality.git
-cd chirality
-pip install -r requirements.txt
-python scripts/smoke_test.py
 ```
-
-If smoke_test.py prints `PASS: all checks passed.`, the installation is working.
-
-### Interactive UI
-
-```bash
+pip install -r requirements.txt
+python healthcheck.py
 streamlit run app.py
 ```
 
-Opens a browser at `http://localhost:8501` with the full Chirality Atlas interface.
+The healthcheck runs the full model pipeline and prints PASS in under 30 seconds.
+The app opens at http://localhost:8501.
 
----
+To regenerate all presentation assets (takes 15-30 minutes):
 
-## What runs where
-
-### Local (laptop)
-
-```bash
-# Particle demos (~1-2 min)
-python scripts/run_particle_demo.py
-
-# Pattern demos (~5-10 min)
-python scripts/run_pattern_demo.py
-
-# Phase sweeps (~10-20 min)
-python scripts/run_phase_sweeps.py
-
-# Animations (~3-5 min)
-python scripts/make_video.py
-
-# Everything at once
-python scripts/make_all_assets.py
+```
+python scripts/05_make_all_assets.py
 ```
 
-All output goes to `outputs/`. Nothing large is committed.
-
-### Colab
-
-Open `notebooks/Chirality_Atlas_Colab.ipynb` in Google Colab or Jupyter.
-
-The notebook has 11 parts and is designed to be run top-to-bottom:
-1. Setup (install + import)
-2. The question (active matter, pattern formation, chirality)
-3. Particle model baseline (ABP)
-4. Add chirality to particles (chiral ABP, edge current)
-5. Vicsek alignment (order parameter, sanity check)
-6. Particle phase diagram (noise vs chirality)
-7. Pattern formation baseline (Gray-Scott spots and labyrinths)
-8. Pattern phase diagram (F vs k)
-9. Creative hacks (feed gradient, obstacle, chiral source)
-10. Bridge (side-by-side comparison of both tracks)
-11. Mini-challenge template + hackathon slide checklist
-
-**Estimated runtime in Colab**: 10-20 minutes for all cells.
-
-All sweeps in the notebook use small grids (4x4) to keep Colab runtime reasonable.
-Larger sweeps are in `scripts/run_phase_sweeps.py` (6x6).
-
 ---
 
-## Generated outputs
+## Generated Outputs
 
 | Path | Contents |
-|------|----------|
-| `outputs/demo/` | Particle snapshots, trail plots, pattern images |
-| `outputs/phase_sweeps/` | Phase diagram heatmaps, sweep data .npz files |
-| `outputs/videos/` | GIF animations of particle and pattern dynamics |
+|---|---|
+| `outputs/panels/` | 6 slide-ready PNG panels |
+| `outputs/movies/` | 4 GIF animations of arm formation and chirality |
+| `outputs/star_ascidian/` | Per-preset demo figures |
+| `outputs/phase_diagrams/` | 4 parameter sweep heatmaps |
+| `outputs/reference/` | 6 reference model figures (GM, GS, FHN, etc.) |
+| `outputs/data/` | metrics CSV, phase diagram CSV, presets JSON |
 
 ---
 
-## How it extends the tutorials
-
-**Tutorial 1 (particles):**
-- `simulate_abp` is the tutorial ABP baseline
-- `simulate_chiral_abp` adds `omega_i * dt` to the orientation update, with five chirality mode options
-- `simulate_vicsek_chiral` adds chirality to the Vicsek alignment step
-- `particle_metrics.py` extends the tutorial metrics with swirl index and boundary accumulation
-- `phase_sweeps.py` automates the tutorial's one-parameter and two-parameter diagram exercises
-
-**Tutorial 2 (patterns):**
-- `simulate_gray_scott` is the tutorial Gray-Scott model
-- `simulate_feed_gradient` extends the tutorial gradient exercise
-- `simulate_obstacle` extends the tutorial circular obstacle exercise
-- `simulate_chiral_source_gray_scott` adds a rotating point source (toy model, new)
-- `pattern_metrics.py` extends tutorial metrics with left-right asymmetry and obstacle disruption score
-
----
-
-## Source layout
+## Repo Structure
 
 ```
 src/chirality/
-  __init__.py          -- public API
-  config.py            -- parameter dataclasses
-  particle_sim.py      -- ABP, chiral ABP, Vicsek
-  particle_metrics.py  -- polar order, MSD, swirl, etc.
-  pattern_sim.py       -- Gray-Scott, gradient, obstacle, chiral source
-  pattern_metrics.py   -- pattern strength, cluster count, asymmetry
-  phase_sweeps.py      -- systematic parameter sweeps
-  plotting.py          -- all visualization
-  presets.py           -- 10 named parameter sets
-  export.py            -- save figures and arrays
-  validation.py        -- finite-value checks
-  storytelling.py      -- human-readable result summaries
+  star_ascidian/
+    __init__.py           public API
+    hybrid_model.py       two-layer combined model + 7 presets
+    center_field.py       Layer 1: GM field + center extraction
+    zooid_agents.py       Layer 2: active zooid agent dynamics
+    metrics.py            7 quantitative metrics
+    phase_diagram.py      4 parameter sweeps
+    compare.py            target vs simulation comparison figures
+    target.py             biological target reference data
+  model_library/
+    gierer_meinhardt.py   GM reference model
+    gray_scott.py         Gray-Scott reference model
+    fisher_kpp.py         Fisher-KPP reference model
+    cahn_hilliard.py      Cahn-Hilliard reference model
+    fitzhugh_nagumo.py    FitzHugh-Nagumo reference model
+    active_particles.py   ABP, chiral ABP, Vicsek
+  visualization/
+    style.py              palette constants, matplotlib style
+    plots.py              field and particle plots
+    panels.py             slide panel generators
+    animations.py         GIF and PNG frame output
 
 scripts/
-  smoke_test.py        -- fast correctness check
-  run_particle_demo.py -- particle figures
-  run_pattern_demo.py  -- pattern figures
-  run_phase_sweeps.py  -- phase diagrams
-  make_video.py        -- GIF animations
-  make_all_assets.py   -- run everything
+  01_run_reference_models.py
+  02_run_star_ascidian_demo.py
+  03_run_phase_diagram.py
+  04_make_movies.py
+  05_make_all_assets.py
+  06_final_smoke_test.py
 
 notebooks/
-  Chirality_Atlas_Colab.ipynb
+  Star_Ascidian_Chirality_Atlas.ipynb   12-section runnable notebook
+  Chirality_Atlas_Colab.ipynb           legacy particle/pattern notebook
 
 docs/
-  science_notes.md     -- equations and physical interpretation
-  tutorial_connections.md
-  judge_readme.md
-  final_5_slide_deck.md
-  speaker_script.md
-  demo_script.md
-  prompt_log.md
-  limitations.md
-  self_audit.md
+  project_brief.md         30-second summary
+  model_notes.md           equation quick reference
+  star_ascidian_model_notes.md  full model derivation
+  tutorial_mapping.md      how each resource maps to the project
+  llm_proficiency.md       full LLM workflow documentation
+  prompt_log.md            6 rounds of prompt-run-test-modify-critique
+  scientific_audit.md      equation audit, metric audit, sanity checks
+  final_5_slide_deck.md    exact slide content
+  speaker_script.md        5-minute timed script
+  demo_script.md           2-minute live app walk-through
+  judge_readme.md          this file for judges
+  limitations.md           honest capability boundaries
+  asset_manifest.md        all output files with slide assignments
+  final_readiness_report.md pre-hackathon status report
+  ui_design_notes.md       Streamlit app design decisions
+  deployment_local.md      local setup instructions
+  deployment_huggingface.md Hugging Face Spaces Docker deployment
+
+assets/
+  style.css
+  logo.svg
+  favicon.svg
+
+app.py                     Streamlit entry point
+healthcheck.py             fast model verification
+Dockerfile                 Hugging Face Spaces container
+requirements.txt
 ```
+
+---
+
+## Model Overview
+
+### Layer 1: Gierer-Meinhardt Field
+
+Turing instability in two chemical species. Short-range activation, long-range inhibition.
+
+    da/dt = Da * lap(a) + rho * a^2 / (h * (1 + kappa*a^2)) - mu_a * a + rho_0
+    dh/dt = Dh * lap(h) + rho * a^2 - mu_h * h
+
+Numerical scheme: IMEX (implicit diffusion, explicit reaction). Fourier space.
+Unconditionally stable for diffusion term. Default Dh/Da = 100.
+
+### Layer 2: Active Zooid Agents
+
+N active self-propelled particles with five force contributions:
+
+    dx/dt = v0*cos(theta) + F_attract + F_radial + F_angular + F_ev
+    dtheta/dt = omega_i + sqrt(2*Dr) * xi(t)
+
+Angular repulsion (the key creative force):
+
+    For pairs from different arm groups at the same center:
+    F = -k_angular * (1 - |dphi|/sigma_angular) * sign(dphi) * t_hat
+
+This converts a ring of agents into discrete arms with even angular spacing.
+
+### Presets
+
+| Preset | omega | Dr | Phase |
+|---|---|---|---|
+| clean_star_systems | 0.0 | 0.04 | Clean radial stars |
+| chiral_twisted_stars | 2.5 | 0.04 | Twisted arms |
+| racemic_mixed | 2.5 mixed | 0.04 | Mixed handedness |
+| overcrowded_merged_systems | 0.0 | 0.04 | Stars merging |
+| noisy_fragmented_systems | 0.0 | 0.9 | Agents escape |
+| boundary_pinned_stars | 0.0 | 0.04 | Box boundary |
+| weak_inhibition_uniform_mat | 0.0 | 0.04 | No Turing spots |
+
+---
+
+## Final Deliverables
+
+| File | Purpose |
+|---|---|
+| `app.py` | Live interactive demo |
+| `notebooks/Star_Ascidian_Chirality_Atlas.ipynb` | Full walkthrough notebook |
+| `outputs/panels/slide*.png` | 5-slide deck visuals |
+| `outputs/movies/*.gif` | Animation visuals |
+| `docs/llm_proficiency.md` | LLM workflow documentation |
+| `docs/scientific_audit.md` | Scientific claims audit |
+
+---
+
+## Limitations
+
+- Arm count (n_arms=7) is a model parameter, not emergent from the physics.
+- Arm count detection metric under-counts at low agent density (3 agents per arm).
+  Use radial_order as the primary quality metric.
+- No Botryllus biochemistry, signaling molecules, blastogenic timing, or 3D geometry.
+- Phase diagram computed at reduced resolution (N=32, n_steps=150) for speed.
+- O(N^2) excluded volume; not suitable for N > ~500 agents.
+
+See `docs/limitations.md` and `docs/scientific_audit.md` for full audit.
 
 ---
 
@@ -174,52 +201,23 @@ docs/
 
 ### Local
 
-See `docs/deployment_local.md` for full instructions including virtual environment setup.
-
-```bash
+```
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# Mac/Linux: source .venv/bin/activate
 pip install -r requirements.txt
+python healthcheck.py
 streamlit run app.py
 ```
 
-### Hugging Face Spaces (Docker)
-
-See `docs/deployment_huggingface.md` for step-by-step instructions.
-
-The repo includes a `Dockerfile` that runs Streamlit on port 7860.
-Push to a Hugging Face Space with Docker SDK and the app deploys automatically.
-
-```bash
-docker build -t chirality-atlas .
-docker run -p 7860:7860 chirality-atlas
-```
-
-No GPU required. No API keys. No external network calls.
-
----
-
-## Scientific limitations
-
-The chiral source for pattern formation is a toy model. It is not a model of any
-specific biological mechanism. Real chiral symmetry breaking in development (e.g.,
-left-right axis determination) involves specific signaling pathways and tissue-level
-mechanics not captured here.
-
-The particle chirality is phenomenological. Connecting omega to real microswimmer
-parameters requires organism-specific measurement.
-
-See `docs/limitations.md` for a complete list.
-
----
-
-## Dependencies
+### Docker
 
 ```
-numpy>=1.24
-matplotlib>=3.7
-scipy>=1.11
-Pillow>=10.0
-imageio>=2.31
-streamlit>=1.30
+docker build -t chirality-atlas-star .
+docker run -p 7860:7860 chirality-atlas-star
 ```
 
-No external APIs, no paid services, no large data files.
+### Hugging Face Spaces
+
+See `docs/deployment_huggingface.md`.
+Push the repo to a Hugging Face Space with Docker SDK and port 7860.

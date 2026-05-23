@@ -1,19 +1,38 @@
-# Do not include large generated outputs in the Docker image
-outputs/
-notebooks/
-
-# Development and docs
-docs/
-.git/
-.gitignore
-
-# Python cache
+# Python bytecode
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 src/**/__pycache__/
 scripts/__pycache__/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Version control
+.git/
+.gitignore
+
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Generated outputs (not needed in image by default)
+# Remove this line to include pre-generated assets in the image
+outputs/
 
 # Build artifacts
 *.egg-info/
@@ -22,8 +41,16 @@ build/
 *.npz
 *.npy
 
+# Secrets and local config
+.env
+.envrc
+.streamlit/secrets.toml
+
+# Claude context files
+.claude/
+CLAUDE.md
+AGENTS.md
+
 # Logs and temp
 *.log
 *.tmp
-.venv/
-venv/

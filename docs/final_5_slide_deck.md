@@ -1,117 +1,138 @@
-# Chirality Atlas: 5-Slide Deck
+# Five-Slide Deck: Chirality Atlas -- Star Ascidian Edition
 
 ---
 
-## Slide 1: Can microscopic handedness reshape living matter?
+## Slide 1: Can local rules generate a living star pattern?
 
-**Key question (10-second version):**
-Active systems -- cells, bacteria, migrating tissues -- often have a built-in left or right bias.
-Does that tiny handedness change how the whole system organizes?
+**One-sentence question:**
+Can a Turing field plus active agents with angular repulsion reproduce the radial geometry
+of a Botryllus schlosseri star ascidian colony?
 
-**Background (2-3 bullets):**
-- Active matter: units consume energy and move. Flocks, bacterial colonies, motility assays.
-- Chirality: a left/right asymmetry in motion, shape, or organization.
-- This project: two minimal computational models, one control knob (omega), one question.
+**Visuals:**
+- Left: schematic of Botryllus star system (draw_star_ascidian in notebook Section 2)
+  or reference image from literature
+- Right: `outputs/panels/slide1_target_and_simulation.png`
+  (3-panel: schematic / GM field / agent snapshot)
 
-**Biological relevance:**
-- Chiral ABP: models bacteria near surfaces, sperm cells, rotating organelles
-- Gray-Scott chiral source: toy model for symmetry-breaking morphogenetic signals
-- Both models connect well-studied tutorials to an open research question
-
-**Suggested visual:**
-  outputs/summary/chirality_atlas_final_panel.png
-
----
-
-## Slide 2: Two tutorial models, one scientific idea
-
-**Particle track (Tutorial 1 extension):**
-- Baseline: Active Brownian Particles (ABP). Self-propulsion + rotational diffusion.
-- Extension: add omega*dt to orientation update. Each particle curves left or right.
-- Vicsek model: local alignment. Chirality competes with collective order.
-- New metric: swirl index (net angular momentum proxy)
-
-**Pattern track (Tutorial 2 extension):**
-- Baseline: Gray-Scott reaction-diffusion. F, k control whether spots or labyrinths form.
-- Extensions: feed gradient (linear F), circular obstacle (no-reaction zone), chiral source (rotating injection point)
-- New metric: left-right field asymmetry
-
-**Both tracks:**
-- Reproduce tutorial baseline behavior first
-- Extend with one new parameter (omega)
-- Build phase diagrams to map how omega interacts with existing control knobs
-
-**Suggested visual:**
-  outputs/summary/chirality_atlas_bridge_panel.png
+**What to say (30 sec):**
+The star ascidian Botryllus schlosseri arranges its animals into star-shaped systems.
+Each star has a central opening and about 7 animals radiating out in discrete arms.
+Multiple stars tile the colony without merging. Some colonies even twist their arms
+in a consistent direction. We asked whether two simple physics rules -- a Turing
+field for spacing and active forces for arm shape -- are enough to produce this geometry.
 
 ---
 
-## Slide 3: Baseline reproduction
+## Slide 2: Field selects centers. Agents form stars.
 
-**Particles:**
-- ABP with no chirality: polar order phi ~ 0.05 (disordered gas). Expected.
-- Vicsek with low noise: phi ~ 0.95 (flocking). Expected.
-- Phase diagram (6x6 grid, N=80, 250 steps per point): polar order drops with Dr, swirl index grows with omega.
+**Model schematic visual:** `outputs/panels/slide2_model_schematic.png`
 
-**Patterns:**
-- F=0.035, k=0.065: self-organized spots, pattern_strength ~ 0.10. Expected.
-- F=0.04, k=0.06: labyrinth morphology. Cluster count higher.
-- F-k phase diagram (6x6 grid, 64x64, 2000 steps per point): pattern strength peaks in known spot/labyrinth region.
+**Layer 1 equation (Gierer-Meinhardt):**
 
-**Note on coarse grids:**
-Phase diagrams use small grids for speed. The qualitative trends are correct;
-quantitative boundaries would shift with finer grids.
+    da/dt = Da * lap(a) + rho * a^2 / (h * (1 + kappa*a^2)) - mu_a * a + rho_0
+    dh/dt = Dh * lap(h) + rho * a^2 - mu_h * h
 
-**Suggested visuals:**
-  outputs/phase_sweeps/particle_noise_vs_chirality_polar_order.png
-  outputs/phase_sweeps/pattern_F_vs_k_pattern_strength.png
+Short-range activation, long-range inhibition. Dh/Da >> 1 gives quasi-regular spots.
 
----
+**Layer 2 equation (active zooid update):**
 
-## Slide 4: Creative hack -- broken symmetry reorganizes the system
+    dx/dt = v0*cos(theta) - k_attract*(x - cx) + k_radial*(r_target - r)*x_hat + F_angular + F_ev
+    dtheta/dt = omega + sqrt(2*Dr) * xi(t)
 
-**Particle hacks:**
-- Chiral vortex gas: all omega > 0. Particles trace circles, cluster weakly at boundaries.
-- Boundary edge current: omega > 0 in circular trap. Particles accumulate on the wall and orbit.
-- Racemic competition: 50% left, 50% right, with soft repulsion. Neither side dominates; swirl index near zero.
-
-**Pattern hacks:**
-- Feed gradient: F varies linearly. Pattern transitions from spots on one side to uniform field on the other.
-- Circular obstacle: no-reaction zone creates a topology defect in the spot pattern.
-- Chiral source (toy model): a rotating injection point breaks left-right symmetry.
-  Measured L-R asymmetry increases from ~0.0001 (no source) to ~0.002+ (omega=0.1).
-
-**Key point for judges:**
-Chirality and noise are competing control knobs.
-Chirality suppresses polar order (individual circling breaks collective alignment),
-but creates a new kind of order (swirl, edge current) invisible to polar order.
-
-**Suggested visuals:**
-  outputs/videos/particle_boundary_edge_current.gif
-  outputs/demo/pattern_chiral_source.png
-  outputs/demo/particle_racemic_competition.png
+**What to say (30 sec):**
+Layer 1 is a Gierer-Meinhardt reaction-diffusion system. Its Turing instability produces
+spots at regular spacing -- these become our star centers. Layer 2 is an active particle
+model. Each zooid is attracted to its home center, confined to a ring at radius r_target,
+and pushed apart from other arms by angular repulsion. Chirality omega rotates the arms.
+The two layers run in sequence and have no feedback between them.
 
 ---
 
-## Slide 5: Biological meaning and limits
+## Slide 3: From noise to star systems.
 
-**What this connects to:**
-- Bacteria near walls: right-handed swimmers accumulate at surfaces and orbit (matches BOUNDARY_EDGE_CURRENT)
-- Left-right axis determination in embryos: local symmetry breaking propagates to tissue scale
-- Chiral active nematics: defect topology controlled by chirality
-- Morphogenetic gradients: feed gradient tutorial is a minimal model of spatial signal gradients
+**Visual:** `outputs/movies/star_formation_clean.gif`
+(16-frame animation from random initialization to final arm structure)
 
-**Honest caveats:**
-- Chiral ABP: omega is phenomenological. Real microswimmer chirality depends on flagella geometry.
-- Gray-Scott chiral source: this is a toy model. No specific organism has this mechanism.
-- Phase diagrams are coarse (6x6). Boundaries should be treated as indicative only.
-- Simulations use Euler integration, which has known stability limits.
-- O(N^2) soft repulsion in particle models; not suitable for N > 500.
+If GIF cannot play: `outputs/panels/slide3_simulation_sequence.png`
+(4 snapshots: t=0, t=100, t=200, t=400)
+
+**Key metrics from clean_star_systems preset:**
+- radial_order: >= 0.8 (agents at target ring)
+- arm_count: detected near 7 (metric is noisy at low N per arm)
+- center_spacing: K centers with characteristic separation
+
+**What to say (45 sec):**
+Starting from agents scattered randomly around each center, the combined forces
+organize them into radial arms in about 400 steps. The radial spring pulls everyone
+to the ring. The angular repulsion pushes arms apart until they are evenly spaced.
+The swirl is near zero when omega equals zero.
+When we add chirality (next slide), the arms rotate -- and we can measure that
+rotation as a nonzero swirl score.
+
+Show `outputs/movies/chiral_twist_emergence.gif` alongside the clean version
+to make the contrast visible.
+
+---
+
+## Slide 4: Phase diagram reveals regimes.
+
+**Visual:** `outputs/panels/slide4_phase_diagram.png`
+(two heatmaps side by side: star_likeness and swirl)
+
+**Regime labels (annotate on slide):**
+
+| Region | k_radial | omega | Description |
+|---|---|---|---|
+| Uniform mat | (Dh/Da too low) | any | No spots form |
+| Spots without stars | low k_radial | any | Centers exist but agents scatter |
+| Clean stars | high k_radial | low | Best geometry; target regime |
+| Twisted stars | high k_radial | high | Arms rotated; swirl nonzero |
+| Merged stars | any | any + n_per_arm high | Stars overlap |
+| Fragmented stars | any | any + Dr high | Agents escape |
+
+**What to say (45 sec):**
+The left heatmap shows star_likeness -- our composite score of arm quality.
+The green region at high k_radial and low omega is the target regime.
+As we increase chirality, star_likeness holds but swirl increases -- the arms
+rotate without losing their structure. At very high chirality, arms lose coherence
+because agents circle faster than they can maintain arm membership.
+The right heatmap shows swirl: it's near zero for omega=0 and grows with omega,
+confirming that the metric captures the biological handedness signature.
+
+---
+
+## Slide 5: Insight and LLM proficiency.
+
+**Visual:** `outputs/panels/slide5_insight_and_limits.png`
+
+**What the model explains:**
+
+- Spatial periodicity of star centers (Turing instability, Dh/Da ratio)
+- Radial arm geometry (center attraction + radial spring)
+- Even arm spacing (angular repulsion)
+- Chirality-induced arm rotation (omega parameter)
+- Non-merging stars (center spacing from GM field)
+
+**What the model does NOT explain:**
+
+- Arm count is a parameter (n_arms), not emergent
+- No Botryllus biochemistry or signaling molecules
+- No blastogenic timing or colonial cycle
+- No 3D geometry or substrate
+- No immune recognition (fusibility)
+
+**Best LLM use (one line each):**
+
+1. IMEX scheme for GM: prompt specified exact denominator; code was correct on first try.
+2. Angular repulsion: prompt specified arm_assignments and formula; vectorized correctly.
+
+**What LLM got wrong:**
+
+The swirl_score function had a numpy broadcast bug (`[:, None]` in column_stack).
+We caught it by checking output shape and comparing to the manually-written force code.
 
 **Takeaway:**
-Handedness can be a design principle in active systems.
-It shifts which order parameters matter and creates emergent structures
-(edge currents, asymmetric patterns) that do not appear in the achiral baseline.
 
-**Suggested visual:**
-  outputs/summary/chirality_atlas_final_panel.png
+A two-stage mechanism -- a Turing field for center placement plus angular repulsion
+for arm formation -- can turn local rules into star-shaped colonial order.
+Chirality adds global rotation without destroying the arm structure.

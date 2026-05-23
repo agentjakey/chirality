@@ -221,6 +221,9 @@ __marimo__/
 CLAUDE.md
 AGENTS.md
 
-# Generated outputs (keep .gitkeep, ignore everything else in outputs/)
+# Generated outputs (keep .gitkeep, optionally keep committed panel PNGs)
 outputs/**
 !outputs/.gitkeep
+# Uncomment the lines below to keep pre-generated slide panels in the repo:
+# !outputs/panels/
+# !outputs/panels/*.png

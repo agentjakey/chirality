@@ -1,113 +1,112 @@
-# Demo Script: Chirality Atlas -- 2-Minute Live App Walk-through
+# Demo Script: Chirality Atlas -- 2-Minute Live Walk-through
 
 ---
 
 ## Before you start
 
-Have these open and ready:
+Have ready:
 - Terminal with `streamlit run app.py` already running at http://localhost:8501
-- Browser tab on the Overview tab
-- Backup: `outputs/` directory open in file explorer
-- Backup GIF: `outputs/videos/particle_boundary_edge_current.gif` in a browser tab
+- Browser tab open on Tab 1 (Target Pattern)
+- File explorer open at `outputs/panels/` as backup
+- Notebook open at `notebooks/Star_Ascidian_Chirality_Atlas.ipynb` as backup
 
 ---
 
-## 2-minute flow (exact tabs and clicks)
+## Step 1 (15 sec): Open Target Pattern tab
 
-### 0:00 -- Overview tab (20 sec)
+Click Tab 1 -- "Target Pattern."
 
-Open the Overview tab.
-Point to the title and say:
-"The question: can microscopic handedness change collective behavior?
-The app has two simulation tracks and a bridge between them."
+Say: "Here is the biological target. The left panel shows a schematic of Botryllus
+schlosseri -- seven radial arms, one central atrium. The right panel shows our model
+output at the same scale. We want to close that gap quantitatively."
 
-Scroll down to show the summary figure.
-
----
-
-### 0:20 -- Particle Lab (35 sec)
-
-Click the Particle Lab tab.
-
-In the sidebar (or preset dropdown), select "Chiral Vortex Gas."
-Click Run Full Simulation.
-While it runs (about 10 seconds):
-"This model extends the Tutorial 1 ABP -- we just added omega*dt to the orientation update."
-
-When it finishes:
-Point to the snapshot.
-"Green particles are right-handed -- they trace circles. The swirl index is nonzero.
-Now watch what happens at a circular boundary."
-
-Change preset to "Boundary Edge Current." Click Run.
-"Particles accumulate on the wall and orbit. That is the edge current."
+[pause, let the image register]
 
 ---
 
-### 0:55 -- Pattern Lab (25 sec)
+## Step 2 (20 sec): Switch to Model Builder tab
 
-Click the Pattern Lab tab.
+Click Tab 2 -- "Model Builder."
 
-Select "Gray-Scott Spots." Click Run.
-"This is the Tutorial 2 baseline -- spots at F=0.035, k=0.065."
+Say: "This is the live model. You can see the parameters here: radial spring,
+chirality, noise, number of arms. Everything is adjustable. By default we are
+at omega equals zero -- no chirality."
 
-Change to "Chiral Source." Click Run.
-"This one has a rotating injection point. It looks similar, but the field is slightly asymmetric left-right. Small effect, but reproducible with fixed seeds."
-
----
-
-### 1:20 -- Phase Atlas (25 sec)
-
-Click the Phase Atlas tab.
-
-Show the polar order heatmap.
-"Low noise and zero chirality: disordered gas. Add chirality: still disordered, but for a different reason. The swirl diagram tells a different story."
-
-Click to the Gray-Scott F-k heatmap.
-"This is the spot/labyrinth transition region from the tutorial. Pattern strength peaks where the tutorial predicts spots."
+[do not touch sliders yet]
 
 ---
 
-### 1:45 -- Bridge Lab (15 sec)
+## Step 3 (20 sec): Run clean stars
 
-Click the Bridge Lab tab.
-"Both models show the same thing: a small change at the local level -- one extra parameter -- reshapes what the system does at the collective level. That is what we mean by chirality as a control knob."
+Click the "Run Simulation" button with default parameters.
 
-End demo.
+Say: "The GM field runs first -- that produces the star centers you see in the
+top panel. Then the zooid agents settle into arms around those centers. This takes
+about 30 seconds."
 
----
+Wait for the output to appear. When it does:
 
-## Backup plan if app fails
-
-If Streamlit is not loading or is slow:
-
-1. Open `outputs/demo/` in a file browser. Show:
-   - `particle_boundary_edge_current.png`
-   - `particle_racemic_competition.png`
-   - `pattern_chiral_source.png`
-   - `pattern_obstacle_disrupted.png`
-
-2. Play GIF directly in browser:
-   - `outputs/videos/particle_boundary_edge_current.gif`
-   - `outputs/videos/particle_chiral_vortex.gif`
-
-3. Show phase diagrams:
-   - `outputs/phase_sweeps/particle_noise_vs_chirality_polar_order.png`
-   - `outputs/phase_sweeps/particle_noise_vs_chirality_swirl_index.png`
-
-4. Show summary panels:
-   - `outputs/summary/chirality_atlas_bridge_panel.png`
-   - `outputs/summary/chirality_atlas_final_panel.png`
-
-All these can be opened in a browser or image viewer without any running code.
+Say: "Radial order is above 0.8. The arms are there. You can see the agents
+organized into lobes around each center."
 
 ---
 
-## Timing notes
+## Step 4 (20 sec): Switch chirality slider
 
-- Full simulation for chiral presets: ~5-10 sec in Particle Lab (N=200, 800-1000 steps)
-- Full simulation for Gray-Scott 256x256 presets: ~30-60 sec in Pattern Lab
-- Phase sweeps in Phase Atlas: precomputed at startup if cached, else ~30 sec for 6x6 grid
+Move the omega slider to approximately 2.5. Click "Run Simulation" again.
 
-If the audience is watching live pattern simulations, say:
-"The 256x256 Gray-Scott takes about a minute. While it runs -- let me show the phase diagram."
+Say: "Now we add chirality. Omega equals 2.5. Same forces, but every agent
+rotates at that rate."
+
+When the result appears:
+
+Say: "The swirl score went from near zero to about 0.3. The arms are still there
+but they are twisted. The model is doing what biology actually does."
+
+---
+
+## Step 5 (15 sec): Phase Explorer
+
+Click Tab 3 -- "Phase Explorer."
+
+Say: "This is the phase diagram. Green means good stars. The model works best at
+high radial spring and low chirality. As omega increases, the color shifts -- swirl
+increases but star quality stays reasonable until chirality is very high."
+
+[point to the heatmap; do not run a live sweep in the demo]
+
+---
+
+## Step 6 (10 sec): LLM Lab Notebook
+
+Click Tab 6 -- "LLM Notebook."
+
+Say: "This tab documents the prompt-run-test-modify-critique workflow.
+Two best prompts, one failure case, what the LLM got wrong and what human judgment
+corrected. The full log is in docs/llm_proficiency.md."
+
+---
+
+## Total time: ~100 seconds. Leave 20 seconds for questions.
+
+---
+
+## Backup Plan
+
+**App crashes:**
+1. Open `outputs/panels/slide1_target_and_simulation.png` in file explorer (Slide 1).
+2. Open `outputs/panels/slide4_phase_diagram.png` (Slide 4).
+3. Run notebook sections 6 and 8 live. They regenerate the key figures in under 2 minutes.
+
+**GIFs do not load:**
+- `outputs/panels/slide3_simulation_sequence.png` is a static 4-panel sequence.
+  Open it and walk through frames manually.
+
+**Port 8501 blocked:**
+- Run `streamlit run app.py --server.port=8502` to try a different port.
+- Or open the notebook and run cells top to bottom.
+
+**Slow machine:**
+- Tab 1 is static and always loads immediately.
+- Tab 4 (Movie Gallery) shows pre-generated GIFs with no computation.
+- Skip the live Run in Tab 2 and use pregenerated assets only.
