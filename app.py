@@ -190,7 +190,7 @@ def _tab_target():
         "Observe: star ascidian colony. &nbsp;|&nbsp; "
         "Hypothesize: Turing field + angular repulsion. &nbsp;|&nbsp; "
         "Simulate: two-layer agent model. &nbsp;|&nbsp; "
-        "Result: yes.</span>"
+        "Result: yes for the core geometry.</span>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -232,44 +232,50 @@ def _tab_target():
             caption="Simulation: colony-scale view (3x3 tiled periodic boundary)",
         )
 
-    col_img, col_info = st.columns([1, 1], gap="large")
-    with col_img:
-        _show_image_safe(
-            os.path.join("outputs", "panels", "slide1_target_and_simulation.png"),
-            caption="Reference | GM field + centers | Agent colony",
-        )
+    st.markdown("---")
+    st.markdown("### What to notice in these images")
 
-    with col_info:
-        st.markdown("### Target Features")
-
-        features = [
-            ("Multiple star centers", "Repeated tiling of the substrate",
-             "n_centers from GM field", True),
-            ("Radial zooid arrangement", "Zooids at target radius from center",
-             "radial_order_score > 0.7", True),
-            ("Discrete arm lobes", "5-10 angular peaks per star (metric underestimates at low density)",
-             "arm_count metric: reads ~1-3 at n_per_arm=3; visual structure is correct", False),
-            ("Even arm spacing", "Arms equally distributed in angle",
-             "angular_uniformity_score > 0.8", True),
-            ("Star non-merging", "Neighboring stars stay separate",
-             "merge_score < 0.1", True),
-            ("Chirality sensitivity", "Omega > 0 produces measurable swirl",
-             "swirl_score != 0", True),
-            ("Colony-level tiling", "Stars tile the surface without gaps",
-             "center_spacing_cv < 0.3", False),
-        ]
-
-        for name, desc, metric, implemented in features:
-            icon = "+" if implemented else "-"
-            color = "#315C4C" if implemented else "#888"
+    c1, c2, c3, c4 = st.columns(4, gap="medium")
+    _cards = [
+        (c1, "Star spacing", "#315C4C",
+         "Stars tile the substrate at regular intervals without merging. "
+         "Spacing emerges from diffusion ratios -- no explicit center-repulsion rule needed."),
+        (c2, "Radial geometry", "#315C4C",
+         "Within each star, zooids arrange outward from a shared center into discrete arm lobes. "
+         "Angular repulsion converts a ring into arms."),
+        (c3, "Biological variation", "#7AA8C8",
+         "Real colonies have irregular spacing, variable arm count, and noisy shapes. "
+         "Rotational noise (Dr) in the model produces this organic look."),
+        (c4, "What we do not claim", "#C15A3A",
+         "Arm count (n_arms=7) is a parameter, not emergent. "
+         "No biochemistry, developmental staging, 3D mechanics, or immune recognition. "
+         "This is a toy geometric model."),
+    ]
+    for col, title, color, text in _cards:
+        with col:
             st.markdown(
-                f"<div style='margin:0.35rem 0; padding:0.4rem 0.7rem; "
-                f"border-left:3px solid {color}; background:#FAFAF7; font-size:0.88rem'>"
-                f"<span style='color:{color};font-weight:700'>{icon}</span> "
-                f"<strong>{name}</strong>: {desc} "
-                f"<span style='color:#888;font-size:0.82rem'>({metric})</span></div>",
+                f"<div style='background:#FFFFFF;border:1px solid #DDD5C8;"
+                f"border-top:3px solid {color};border-radius:0 0 4px 4px;"
+                f"padding:0.8rem 0.9rem;height:100%'>"
+                f"<div style='font-size:0.78rem;font-weight:700;color:{color};"
+                f"text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem'>"
+                f"{title}</div>"
+                f"<div style='font-size:0.86rem;color:#1F2421;line-height:1.5'>{text}</div>"
+                f"</div>",
                 unsafe_allow_html=True,
             )
+
+    st.markdown(
+        "<div style='background:#E8F0EC;border-left:4px solid #315C4C;"
+        "border-radius:0 5px 5px 0;padding:0.8rem 1.2rem;margin:1rem 0'>"
+        "<strong style='color:#315C4C'>Judge takeaway:</strong>"
+        "<span style='color:#1F2421'> We decompose the biological image into two modeling problems: "
+        "center placement (Layer 1: Turing activator-inhibitor field) and arm formation "
+        "(Layer 2: active agents with angular repulsion). Each layer is independently "
+        "tunable and physically motivated.</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
     st.markdown("---")
     st.markdown("### Model Hypothesis")
@@ -334,29 +340,52 @@ r_target. At high omega, agents overshoot and arm structure blurs.
 
 def _tab_model_builder():
     st.markdown("## Model Builder")
-    st.markdown(
-        "Configure both layers and run a full colony simulation. "
-        "Computationally expensive settings are capped for app safety."
+    st.warning(
+        "Live simulation may take 45-90 seconds. "
+        "For instant results, use the Movie Gallery tab."
     )
 
+    st.markdown("### Quick start: choose a preset")
+    _preset_col, _ = st.columns([2, 3])
+    with _preset_col:
+        _preset_choice = st.selectbox(
+            "Beginner preset",
+            ["clean stars", "chiral twist", "fragmented", "merged"],
+            help="Sets parameters to a named regime. Adjust sliders below to explore.",
+            key="mb_preset",
+        )
+    _preset_params = {
+        "clean stars":  dict(k_radial=2.0, omega=0.0,  Dr=0.04, n_arms=7, n_per_arm=3,
+                             Dh=5.0, mu_h=0.05, n_agent_steps=300, grid_size=32, n_field_steps=1200),
+        "chiral twist": dict(k_radial=2.0, omega=2.5,  Dr=0.04, n_arms=7, n_per_arm=3,
+                             Dh=5.0, mu_h=0.05, n_agent_steps=300, grid_size=32, n_field_steps=1200),
+        "fragmented":   dict(k_radial=2.0, omega=0.0,  Dr=0.80, n_arms=7, n_per_arm=3,
+                             Dh=5.0, mu_h=0.05, n_agent_steps=300, grid_size=32, n_field_steps=1200),
+        "merged":       dict(k_radial=0.5, omega=0.0,  Dr=0.04, n_arms=7, n_per_arm=3,
+                             Dh=5.0, mu_h=0.05, n_agent_steps=300, grid_size=32, n_field_steps=1200),
+    }
+    _p = _preset_params[_preset_choice]
+
+    st.markdown("---")
     st.markdown("### Layer 1 — Activator-Inhibitor Field (Gierer-Meinhardt)")
     c1, c2, c3 = st.columns(3)
     with c1:
         grid_size = st.select_slider(
             "Grid size (N x N)", options=[16, 32, 64],
-            value=32, help="Larger = more centers possible, slower",
+            value=int(_p["grid_size"]),
+            help="Larger = more centers possible, slower",
         )
         n_field_steps = st.slider(
-            "Field simulation steps", 500, 2000, 1200, step=250,
+            "Field simulation steps", 500, 2000, int(_p["n_field_steps"]), step=250,
             help="More steps = better-equilibrated spots",
         )
     with c2:
         Dh = st.slider(
-            "Dh (inhibitor diffusion)", 0.5, 15.0, 5.0, step=0.5,
+            "Dh (inhibitor diffusion)", 0.5, 15.0, float(_p["Dh"]), step=0.5,
             help="Higher Dh/Da = more Turing spots = more star centers",
         )
         mu_h = st.slider(
-            "mu_h (inhibitor decay)", 0.01, 0.40, 0.05, step=0.01,
+            "mu_h (inhibitor decay)", 0.01, 0.40, float(_p["mu_h"]), step=0.01,
             help="Higher mu_h = inhibitor decays faster = fewer, denser spots",
         )
     with c3:
@@ -366,30 +395,44 @@ def _tab_model_builder():
         )
 
     st.markdown("### Layer 2 — Zooid Agents")
+    st.markdown(
+        "<div style='font-size:0.82rem;color:#555;margin-bottom:0.5rem'>"
+        "k_radial: how strongly agents stay near target radius &nbsp;|&nbsp; "
+        "omega: chirality/twist strength (0 = none) &nbsp;|&nbsp; "
+        "Dr: biological randomness/noise &nbsp;|&nbsp; "
+        "n_arms: number of arm groups (parameter, not emergent)"
+        "</div>",
+        unsafe_allow_html=True,
+    )
     c4, c5, c6 = st.columns(3)
     with c4:
-        n_arms = st.slider("Target arms per star", 3, 10, 7,
-                           help="Sets arm initialization and angular repulsion spacing")
-        n_per_arm = st.slider("Agents per arm", 1, 6, 3,
-                              help="Total agents per center = n_arms x n_per_arm")
+        n_arms = st.slider("Target arms per star (n_arms)", 3, 10, int(_p["n_arms"]),
+                           help="Sets arm initialization and angular repulsion spacing. "
+                                "This is a parameter, not an emergent quantity.")
+        n_per_arm = st.slider("Agents per arm", 1, 6, int(_p["n_per_arm"]),
+                              help="Total agents per center = n_arms x n_per_arm. "
+                                   "Use >= 5 for reliable arm count detection.")
         omega = st.slider(
-            "omega (chirality rate)", 0.0, 5.0, 0.0, step=0.25,
-            help="0 = no twist. Positive = CCW arm rotation.",
+            "omega (chirality rate)", 0.0, 5.0, float(_p["omega"]), step=0.25,
+            help="0 = no twist. Positive = CCW arm rotation. Arms blur above omega ~2.",
         )
     with c5:
-        Dr = st.slider("Dr (rotational noise)", 0.01, 1.5, 0.04, step=0.01,
-                       help="Higher Dr = noisier arm structure")
-        k_radial = st.slider("k_radial (arm tightness)", 0.5, 5.0, 2.0, step=0.25,
-                             help="Radial spring toward r_target")
+        Dr = st.slider("Dr (rotational noise)", 0.01, 1.5, float(_p["Dr"]), step=0.01,
+                       help="Higher Dr = noisier, more biological-looking arms. "
+                            "Too high = fragmented (agents escape).")
+        k_radial = st.slider("k_radial (arm tightness)", 0.5, 5.0, float(_p["k_radial"]), step=0.25,
+                             help="Radial spring toward r_target. "
+                                  "Main quality signal: higher = tighter arms.")
         k_angular = st.slider("k_angular (arm separation)", 0.1, 2.0, 0.6, step=0.1,
-                              help="Repulsion between adjacent arms")
+                              help="Repulsion between adjacent arms. "
+                                   "Without it: ring. With it: discrete lobes.")
     with c6:
         n_agent_steps = st.slider(
-            "Agent simulation steps", 100, 600, 300, step=50,
+            "Agent simulation steps", 100, 600, int(_p["n_agent_steps"]), step=50,
             help="More steps = better-formed arms, slower",
         )
         boundary = st.selectbox("Boundary condition", ["periodic", "box"],
-                                help="Periodic = torus. Box = hard walls.")
+                                help="Periodic = torus (default). Box = hard walls.")
         seed = st.number_input("Random seed", min_value=0, max_value=9999,
                                value=42, step=1)
 
@@ -448,16 +491,17 @@ def _tab_model_builder():
             unsafe_allow_html=True,
         )
         _metric_row([
-            ("Star-likeness", f"{m['star_likeness_score']:.3f}",
-             "Composite score in [0,1]. >0.6 = good stars."),
             ("Radial order", f"{m['radial_order']:.3f}",
-             "Fraction of agents near r_target. 1.0 = perfect ring."),
+             "PRIMARY SIGNAL. Fraction of agents near r_target. >= 0.8 = good stars."),
+            ("Star-likeness", f"{m['star_likeness_score']:.3f}",
+             "Composite score in [0,1]. > 0.6 = good stars."),
             ("Arm count (mean)", f"{m['arm_count_mean']:.1f}",
-             f"Angular histogram peaks. Underestimates at n_per_arm<5. Target: {n_arms}"),
+             f"Angular histogram peaks. Underestimates at n_per_arm < 5. Target: {n_arms}. "
+             "Trust visual output over this number at low density."),
             ("Swirl score", f"{m['swirl_score']:.3f}",
-             "Net tangential velocity. 0 = radial, nonzero = chiral."),
+             "Chirality signal. 0 = radial, ~0.3 = chiral at omega=2.5."),
             ("Fragmentation", f"{m['fragmentation']:.3f}",
-             "Fraction of escaped agents. <0.1 = well-contained."),
+             "Fraction of escaped agents. < 0.1 = well-contained."),
         ])
 
         ic1, ic2 = st.columns(2, gap="medium")
@@ -553,24 +597,20 @@ def _tab_model_builder():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _tab_phase_explorer():
-    st.markdown("## Live Phase Explorer")
+    st.markdown("## Phase Explorer: Parameter Space")
+
     st.markdown(
-        "Explore how parameters control colony morphology. "
-        "Load pregenerated heatmaps instantly, or run a live sweep on a 5x5 grid."
-    )
-    st.markdown(
-        "<div style='background:#F7F3EA;border:1px solid #DDD5C8;"
-        "border-left:4px solid #315C4C;border-radius:0 4px 4px 0;"
-        "padding:0.6rem 1rem;margin-bottom:1rem;font-size:0.9rem;color:#1F2421'>"
-        "<strong>Regime guide:</strong> "
-        "Low k_radial = no arms (ring). "
-        "Moderate k_radial + low omega = clean stars (best). "
-        "High omega = twisted/rotating arms. "
-        "High Dr = fragmented. "
-        "Low Dh/Da = uniform mat (no Turing spots). "
-        "Overcrowded = merged stars."
+        "<div style='background:#1F2421;border-radius:5px;padding:0.6rem 1.2rem;"
+        "margin-bottom:1rem'>"
+        "<span style='color:#C15A3A;font-size:0.95rem;font-weight:700'>"
+        "One run is a demo. A phase diagram is the result.</span>"
         "</div>",
         unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        "Each cell in the heatmap is one simulation at fixed parameters. "
+        "Bright regions are the target regime. Named regimes were verified with full-resolution runs."
     )
 
     sweep_name = st.selectbox(
@@ -581,11 +621,6 @@ def _tab_phase_explorer():
             "C — Inhibition ratio vs center spacing quality",
         ],
         key="phase_sweep_select",
-    )
-
-    run_mode = st.radio(
-        "Mode", ["Load pregenerated (fast)", "Run live 5x5 sweep (~30 sec)"],
-        horizontal=True, key="phase_run_mode",
     )
 
     pregenerated_paths = {
@@ -622,22 +657,58 @@ def _tab_phase_explorer():
         ),
     }
 
-    if run_mode == "Load pregenerated (fast)":
-        # Show the regime-labeled phase diagram as the primary view
-        regime_path = os.path.join("outputs", "panels", "phase_diagram_with_regimes.png")
-        if os.path.exists(regime_path) and sweep_name.startswith("A"):
-            _show_image_safe(
-                regime_path,
-                caption="Sweep A: star-likeness (left) and swirl score (right) "
-                        "with regime labels. Insets show preset snapshots.",
-            )
-        else:
-            _show_image_safe(
-                pregenerated_paths[sweep_name],
-                caption=f"Pregenerated: {sweep_name.split(' — ')[1]}",
-            )
-
+    # Default: show pregenerated regime-labeled diagram
+    regime_path = os.path.join("outputs", "panels", "phase_diagram_with_regimes.png")
+    if sweep_name.startswith("A") and os.path.exists(regime_path):
+        _show_image_safe(
+            regime_path,
+            caption="Sweep A: star-likeness (left) and swirl score (right) "
+                    "with regime labels. Insets show preset snapshots.",
+        )
     else:
+        _show_image_safe(
+            pregenerated_paths[sweep_name],
+            caption=f"Pregenerated: {sweep_name.split(' — ')[1]}",
+        )
+
+    st.markdown("---")
+    st.markdown(interpretations[sweep_name])
+
+    st.markdown("### Regime guide")
+    _regime_rows = [
+        ("#315C4C", "Clean stars",
+         "Moderate k_radial, low omega. Best morphology. Radial order > 0.8, swirl near zero."),
+        ("#C15A3A", "Twisted stars",
+         "High omega. Arms rotate persistently. Structure survives up to omega ~2."),
+        ("#888888", "Fragmented",
+         "High noise (Dr). Agents escape their star. Fragmentation score > 0.3."),
+        ("#888888", "Merged stars",
+         "Overcrowded. Stars lose individual identity."),
+        ("#7AA8C8", "Spots without arms",
+         "Centers exist but k_radial too weak. Agents form a ring, not lobes."),
+        ("#7AA8C8", "Uniform mat",
+         "Low Dh/Da (below Turing threshold). No GM spots, no centers, no arms."),
+    ]
+    for color, name, desc in _regime_rows:
+        st.markdown(
+            f"<div style='margin:0.3rem 0;padding:0.4rem 0.8rem;"
+            f"border-left:3px solid {color};background:#FAFAF7;font-size:0.88rem'>"
+            f"<strong style='color:{color}'>{name}:</strong>"
+            f"<span style='color:#1F2421'> {desc}</span></div>",
+            unsafe_allow_html=True,
+        )
+
+    _notice(
+        "Phase boundaries shift slightly at higher resolution. "
+        "The 5x5 grid is qualitative. "
+        "Each named regime was verified with a full-resolution preset run."
+    )
+
+    with st.expander("Advanced: rerun a small sweep (~30 sec)"):
+        st.markdown(
+            "Runs 25 simulations at reduced resolution (N=32, 150 agent steps). "
+            "Use pregenerated diagrams above for reliable presentation."
+        )
         live_clicked = st.button("Run live sweep", key="phase_live_run")
 
         if live_clicked or f"phase_result_{sweep_name[0]}" in st.session_state:
@@ -661,7 +732,6 @@ def _tab_phase_explorer():
             cached = st.session_state.get(key)
             if cached is not None:
                 x_vals, y_vals, grids = cached
-
                 metric_key = list(grids.keys())[0]
                 grid = grids[metric_key]
 
@@ -691,20 +761,10 @@ def _tab_phase_explorer():
                 st.pyplot(fig, use_container_width=False)
                 plt.close(fig)
 
-    st.markdown("---")
-    st.markdown(interpretations[sweep_name])
-
-    _notice(
-        "Each cell in the heatmap is one simulation run at fixed parameters. "
-        "The 5x5 grid uses 150 agent steps and 1500 field steps for speed; "
-        "production presets use 400+ steps. Phase boundaries shift slightly at "
-        "higher resolution."
-    )
-
-    _limit(
-        "Short sweep runs (n_steps=150) may not reach steady state. "
-        "Treat boundary positions as qualitative, not quantitative."
-    )
+        _limit(
+            "Short sweep runs (n_steps=150) may not reach steady state. "
+            "Treat boundary positions as qualitative."
+        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -730,10 +790,10 @@ def _tab_movie_gallery():
 
     with hero_a:
         st.markdown(
-            "<div style='font-size:1.0rem;font-weight:700;color:#1F2421;margin-bottom:0.3rem'>"
+            "<div style='font-size:1.0rem;font-weight:700;color:#1F2421;margin-bottom:0.2rem'>"
             "1. Clean Star Formation</div>"
             "<div style='font-size:0.82rem;color:#555;margin-bottom:0.5rem'>"
-            "omega = 0  |  radial  |  clean_star_systems preset</div>",
+            "omega = 0 &nbsp;|&nbsp; radial &nbsp;|&nbsp; clean_star_systems preset</div>",
             unsafe_allow_html=True,
         )
         _show_gif_safe(os.path.join("outputs", "movies", "star_formation_clean.gif"))
@@ -744,17 +804,18 @@ def _tab_movie_gallery():
             "By the final frame they have settled into radial lobes at r_target. "
             "Radial spring drives them outward; angular repulsion pushes arms apart.<br>"
             "<strong>Why it matters:</strong> No global template. "
-            "Arms emerge from local rules only."
+            "Arms emerge from local rules only.<br>"
+            "<strong>Parameter changed from baseline:</strong> none. This is the reference."
             "</div>",
             unsafe_allow_html=True,
         )
 
     with hero_b:
         st.markdown(
-            "<div style='font-size:1.0rem;font-weight:700;color:#1F2421;margin-bottom:0.3rem'>"
+            "<div style='font-size:1.0rem;font-weight:700;color:#1F2421;margin-bottom:0.2rem'>"
             "2. Chiral Twist Emergence</div>"
             "<div style='font-size:0.82rem;color:#555;margin-bottom:0.5rem'>"
-            "omega = 2.5  |  chiral  |  chiral_twisted_stars preset</div>",
+            "omega = 2.5 &nbsp;|&nbsp; chiral &nbsp;|&nbsp; chiral_twisted_stars preset</div>",
             unsafe_allow_html=True,
         )
         _show_gif_safe(os.path.join("outputs", "movies", "chiral_twist_emergence.gif"))
@@ -763,13 +824,20 @@ def _tab_movie_gallery():
             "<strong>What to notice:</strong> Same initialization, nonzero turning rate. "
             "Arms slowly rotate CCW. Compare final arm angles to the clean case.<br>"
             "<strong>Why it matters:</strong> Chirality is measurable. "
-            "Swirl score rises from ~0.01 to ~0.3 with omega = 2.5."
+            "Swirl score rises from ~0.01 to ~0.3 with omega = 2.5.<br>"
+            "<strong>Parameter changed:</strong> omega 0 &rarr; 2.5 (chirality rate). "
+            "All other parameters identical."
             "</div>",
             unsafe_allow_html=True,
         )
 
     st.markdown("---")
-    st.markdown("### Colony Scale")
+    st.markdown("### 3. Colony Scale")
+    st.markdown(
+        "<div style='font-size:0.82rem;color:#555;margin-bottom:0.5rem'>"
+        "Multi-star view &nbsp;|&nbsp; seed=0 &nbsp;|&nbsp; 3x3 periodic tiling</div>",
+        unsafe_allow_html=True,
+    )
     _show_gif_safe(os.path.join("outputs", "movies", "colony_scale_formation.gif"))
     st.markdown(
         "<div class='notice-box'>"
@@ -777,17 +845,12 @@ def _tab_movie_gallery():
         "Each center develops its own arm cluster independently. "
         "The regular spacing between centers comes from the GM field (Layer 1), "
         "not from direct particle-particle repulsion between stars.<br>"
-        "<strong>Why it matters:</strong> This is the colony-level view. "
-        "Individual stars self-organize locally; "
-        "global regularity comes from the Turing mechanism."
+        "<strong>Why it matters:</strong> Individual stars self-organize locally; "
+        "global regularity comes from the Turing mechanism.<br>"
+        "<strong>Parameter changed from single-star view:</strong> "
+        "Multiple GM field centers active; 3x3 periodic tiling applied."
         "</div>",
         unsafe_allow_html=True,
-    )
-
-    st.markdown("---")
-    st.info(
-        "GIFs generated by scripts/make_visual_rescue.py. "
-        "If animations appear static, open the .gif files directly in Chrome."
     )
 
 
@@ -801,6 +864,23 @@ def _tab_mechanism():
         "Two local rules explain two levels of spatial order. "
         "Colony-scale center spacing emerges from a reaction-diffusion instability. "
         "Within-star radial geometry emerges from attraction, confinement, and angular repulsion."
+    )
+
+    st.markdown(
+        "<div style='background:#1F2421;border-radius:5px;padding:0.7rem 1.2rem;"
+        "margin:0.5rem 0 1rem 0'>"
+        "<span style='color:#F7F3EA;font-size:0.82rem;font-weight:700;"
+        "letter-spacing:0.07em'>MECHANISM SUMMARY</span><br>"
+        "<span style='color:#7AA8C8;font-weight:600'>Turing field</span>"
+        "<span style='color:#DDD5C8'> &rarr; star centers (Layer 1)</span>"
+        "<span style='color:#DDD5C8'> &nbsp;|&nbsp; </span>"
+        "<span style='color:#7AA8C8;font-weight:600'>radial spring + angular repulsion</span>"
+        "<span style='color:#DDD5C8'> &rarr; discrete arms (Layer 2)</span>"
+        "<span style='color:#DDD5C8'> &nbsp;|&nbsp; </span>"
+        "<span style='color:#C15A3A;font-weight:600'>chirality omega</span>"
+        "<span style='color:#DDD5C8'> &rarr; measurable swirl</span>"
+        "</div>",
+        unsafe_allow_html=True,
     )
 
     mech_left, mech_right = st.columns([1, 1], gap="large")
@@ -1047,6 +1127,22 @@ def _tab_llm_notebook():
         unsafe_allow_html=True,
     )
 
+    st.markdown(
+        "<div style='background:#FFFFFF;border:1px solid #DDD5C8;"
+        "border-left:4px solid #7AA8C8;border-radius:0 5px 5px 0;"
+        "padding:0.8rem 1.2rem;margin-bottom:1.2rem'>"
+        "<strong style='color:#1F2421'>Human verification:</strong>"
+        "<ul style='color:#1F2421;margin:0.4rem 0 0 0;padding-left:1.2rem;font-size:0.88rem'>"
+        "<li>Equations checked against literature (GM IMEX derivation, active particle dynamics)</li>"
+        "<li>Every generated function smoke-tested: shape checks, finiteness, expected physics</li>"
+        "<li>Swirl score broadcast error caught and corrected manually</li>"
+        "<li>Phase diagram outputs compared against known Turing instability conditions</li>"
+        "<li>All biological caveats added by human -- LLM tended to overclaim scope</li>"
+        "</ul>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
     with st.expander("Best prompt 1: IMEX Gierer-Meinhardt solver", expanded=False):
         st.code(
             """Implement the Gierer-Meinhardt system in Fourier space with IMEX scheme.
@@ -1099,59 +1195,6 @@ Vectorize with numpy boolean masks. Return (N, 2) force array.""",
         "LLM provided implementations and architectural suggestions; "
         "humans made all scientific calls."
     )
-
-    st.markdown("---")
-    st.markdown("### Two Best Prompts")
-
-    with st.expander("Prompt 1: IMEX Gierer-Meinhardt solver"):
-        st.code(
-            """Implement the Gierer-Meinhardt reaction-diffusion system in Fourier space
-using an IMEX (implicit-explicit) scheme. Treat diffusion implicitly:
-
-    denom_a = 1 + dt * (Da * k2 + mu_a)
-    denom_h = 1 + dt * (Dh * k2 + mu_h)
-
-Treat nonlinear reaction terms explicitly. In each step:
-1. Compute reaction_a = rho * a^2 / (h * (1 + kappa*a^2)) - mu_a*a + rho_0
-2. Compute reaction_h = rho * a^2 - mu_h*h
-3. Take FFT of a and h
-4. Update: a_hat = (a_hat + dt * fft(reaction_a)) / denom_a
-5. IFFT back to real space, take real part, clip to > 0
-
-The scheme must be unconditionally stable for diffusion.
-Return activator and inhibitor histories as (n_snapshots, N, N) arrays.""",
-            language="text",
-        )
-        st.markdown(
-            "**Outcome:** Correct on first try. Stability verified at dt=5.0 (10x default). "
-            "The explicit denominator spec prevented the common error of treating decay "
-            "explicitly (which causes high-k instability)."
-        )
-
-    with st.expander("Prompt 2: Vectorized angular repulsion"):
-        st.code(
-            """Write a numpy function that computes pairwise angular repulsion forces
-between N agents. Two arrays: assignments (N,) center index, arm_assignments (N,) arm index.
-
-For each pair (i,j) where assignments[i]==assignments[j] and arm_assignments[i]!=arm_assignments[j]:
-    phi_i = atan2(pos[i] - center)  (angle from center)
-    dphi = phi_i - phi_j, wrapped to [-pi, pi]
-    sigma = 1.5 * 2*pi / n_arms
-    if |dphi| < sigma:
-        F = -k * (1 - |dphi|/sigma) * sign(dphi) * t_hat_i
-        where t_hat_i = [-r_hat_i_y, r_hat_i_x]
-
-Same-arm pairs (arm_assignments[i]==arm_assignments[j]): force = 0 automatically
-via sign(dphi)=0 when dphi~0.
-Return (N, 2) force array. Vectorize with numpy boolean masks.""",
-            language="text",
-        )
-        st.markdown(
-            "**Outcome:** Correct on first try. Verified by: same-arm force sum = 0, "
-            "adjacent-arm force pushes apart. The key insight -- using sign(dphi)=0 "
-            "to zero out same-arm force instead of an explicit if-branch -- came from "
-            "the prompt specification."
-        )
 
     st.markdown("---")
     st.markdown("### What the Human Decided")
@@ -1255,7 +1298,21 @@ def _tab_presentation():
         "Files are listed with paths relative to repo root."
     )
 
-    # Quick start box
+    # Canonical PDF reference
+    st.markdown(
+        "<div style='background:#1F2421;border-radius:5px;padding:0.7rem 1.2rem;"
+        "margin-bottom:0.8rem'>"
+        "<span style='color:#F7F3EA;font-size:0.82rem;font-weight:700;"
+        "letter-spacing:0.07em'>FINAL PRESENTATION PDF</span><br>"
+        "<code style='color:#7AA8C8;font-size:0.9rem'>"
+        "outputs/submission/Chirality_Atlas_Star_Ascidian_FINAL.pdf</code><br>"
+        "<span style='color:#DDD5C8;font-size:0.82rem'>"
+        "Editable backup (PPTX): "
+        "outputs/slides/Chirality_Atlas_Star_Ascidian_Edition.pptx</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
     st.markdown(
         "<div style='background:#E8F0EC;border-left:4px solid #315C4C;"
         "border-radius:0 5px 5px 0;padding:0.8rem 1.2rem;margin-bottom:1rem'>"
@@ -1277,7 +1334,7 @@ def _tab_presentation():
             "shared atrium, radial arms, regular spacing between stars. "
             "Left on the slide is the real colony; right is our colony-scale simulation. "
             "Say: 'We asked whether two local rules can reproduce this geometry from scratch. "
-            "The answer is yes.' Transition: 'Let me explain the mechanism.'",
+            "Yes for the core geometry.' Transition: 'Let me explain the mechanism.'",
         ),
         (
             "Slide 2 (0:55) -- Model: centers first, stars second",
@@ -1364,10 +1421,10 @@ def _tab_presentation():
     st.markdown("---")
     st.markdown("### Backup Plan")
     st.warning(
-        "If the app fails: open outputs/panels/ in a file browser and present "
-        "slide1 through slide5 + final_summary_panel directly. "
-        "Phase diagrams in outputs/phase_diagrams/. "
-        "Movies in outputs/movies/ open in any image viewer."
+        "If the app fails: open outputs/submission/Chirality_Atlas_Star_Ascidian_FINAL.pdf "
+        "in any PDF viewer and present the 5 slides directly. "
+        "GIFs are in outputs/movies/ -- open in a browser window. "
+        "Phase diagram PNG is in outputs/panels/phase_diagram_with_regimes.png."
     )
 
     with st.expander("All pregenerated output files"):

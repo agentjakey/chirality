@@ -30,22 +30,22 @@ ls outputs/movies/
 # Expected: star_formation_clean.gif, chiral_twist_emergence.gif, colony_scale_formation.gif
 
 ls outputs/slides/
-# Expected: Chirality_Atlas_Star_Ascidian_Edition.pptx (477 KB, 5 slides)
+# Expected: Chirality_Atlas_Star_Ascidian_Edition.pptx (editable backup)
 
 ls outputs/submission/
-# Expected: SUBMISSION_README.md, PPTX, hero panels, GIFs, scripts
+# Expected: Chirality_Atlas_Star_Ascidian_FINAL.pdf, SUBMISSION_README.md, hero panels, GIFs
 ```
 
-## Slide deck (session 6 rebuild)
+## Final presentation artifact
 
-- [ ] `outputs/slides/Chirality_Atlas_Star_Ascidian_Edition.pptx` opens and shows exactly 5 slides
-- [ ] Slide 1: real reference image (left) + colony_scale_reference_match (right, 36 stars)
-- [ ] Slide 2: center_selection_schematic (left) + single_star_mechanism (right)
-- [ ] Slide 3: formation sequence (4 frames, clean + chiral rows)
-- [ ] Slide 4: phase_diagram_with_regimes (6 named regimes visible)
-- [ ] Slide 5: 3-column layout (matched / did not / LLM use)
-- [ ] Footer on every slide: "Chirality Atlas: Star Ascidian Edition" + slide number
-- [ ] PDF export done (manually: File > Save as PDF in PowerPoint)
+- [ ] `outputs/submission/Chirality_Atlas_Star_Ascidian_FINAL.pdf` opens
+- [ ] PDF has exactly 5 pages
+- [ ] Page 1: observe / target organism / two levels of order
+- [ ] Page 2: two-layer model (center selection + arm formation)
+- [ ] Page 3: simulation dynamics (noise to radial arms)
+- [ ] Page 4: phase diagram with 6 named regimes
+- [ ] Page 5: insight, limits, LLM use
+- [ ] PPTX at `outputs/slides/Chirality_Atlas_Star_Ascidian_Edition.pptx` is backup only
 
 ## App checks (session 6 tab order)
 

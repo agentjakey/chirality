@@ -4,13 +4,21 @@ Generated: 2026-05-23
 
 ---
 
-## Final deck path
+## Final presentation artifact (canonical)
+
+```
+outputs/submission/Chirality_Atlas_Star_Ascidian_FINAL.pdf
+```
+
+This is the primary judge-facing file.
+
+## Editable backup deck
 
 ```
 outputs/slides/Chirality_Atlas_Star_Ascidian_Edition.pptx
 ```
 
-Size: 488 KB, 5 slides, speaker notes embedded.
+488 KB, 5 slides, speaker notes embedded. Editable backup only -- not the primary artifact.
 
 ---
 
@@ -143,9 +151,9 @@ python scripts/make_pptx.py
 
 ## Files to open first (judge handoff order)
 
-1. `outputs/submission/SUBMISSION_README.md` -- entry point for judges
-2. `outputs/submission/judge_readme.md` -- 9 questions, verification status, backup plan
-3. `outputs/slides/Chirality_Atlas_Star_Ascidian_Edition.pptx` -- 5-slide deck
+1. `outputs/submission/Chirality_Atlas_Star_Ascidian_FINAL.pdf` -- final presentation for judges
+2. `outputs/submission/SUBMISSION_README.md` -- entry point and package overview
+3. `outputs/submission/judge_readme.md` -- 9 questions, verification status, backup plan
 4. `docs/final_5_minute_script.md` -- pitch script
 5. `docs/final_2_minute_demo_script.md` -- live demo script
 6. `outputs/submission/final_submit_checklist.md` -- pre-demo checklist

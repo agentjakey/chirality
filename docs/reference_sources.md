@@ -7,7 +7,7 @@ File: `assets/reference/star_ascidian_reference.jpg`
 Used in:
 - Streamlit app Tab 1 (Target Pattern) — displayed as the biological reference
 - `outputs/panels/slide1_target_and_simulation.png` (left panel)
-- `outputs/slides/` PPTX deck (Slide 1)
+- `outputs/submission/Chirality_Atlas_Star_Ascidian_FINAL.pdf` (Page 1)
 
 Source note: see `assets/reference/source_note.txt`
 
