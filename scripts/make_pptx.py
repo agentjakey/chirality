@@ -111,37 +111,32 @@ def make_slide1(prs):
     _set_bg(slide, LIGHT)
     _title_bar(slide,
                "Can local rules generate a living star pattern?",
-               "Observe: star ascidian colony  |  Hypothesize: Turing field + angular repulsion  |  Result: yes")
+               "Observe: star ascidian colony  |  Hypothesize: Turing field + angular repulsion  |  Result: yes for the core geometry")
 
     content_top = Inches(1.10)
-    content_h = Inches(5.65)
+    content_h = Inches(5.30)   # shorter to leave room for message strip
 
     # Left half: real reference image (prominent)
     if os.path.exists(REF):
         _img(slide, REF, Inches(0.2), content_top, Inches(6.3), content_h)
         _txt(slide, "Botryllus schlosseri (real colony)",
-             Inches(0.2), Inches(6.82), Inches(6.3), Inches(0.22),
+             Inches(0.2), Inches(6.47), Inches(6.3), Inches(0.22),
              size=10, color=ACCENT, align=PP_ALIGN.CENTER, italic=True)
 
     # Right half: colony_scale_reference_match (simulation match)
     colony_path = os.path.join(PANELS, "colony_scale_reference_match.png")
     _img(slide, colony_path, Inches(6.7), content_top, Inches(6.4), content_h)
     _txt(slide, "Simulation: colony-scale view (3x3 periodic tiling)",
-         Inches(6.7), Inches(6.82), Inches(6.4), Inches(0.22),
+         Inches(6.7), Inches(6.47), Inches(6.4), Inches(0.22),
          size=10, color=BLUE_GRAY, align=PP_ALIGN.CENTER, italic=True)
 
-    # Three-bullet description
-    bullets = [
-        "Two-level pattern: star spacing + radial zooid geometry",
-        "Stars tile the substrate at characteristic spacing",
-        "We model the geometry, not the full organism",
-    ]
-    y = Inches(7.08)
-    for b in bullets:
-        _txt(slide, "  " + b,
-             Inches(0.2), y, Inches(13.0), Inches(0.22),
-             size=10, color=INK, align=PP_ALIGN.LEFT)
-        y += Inches(0.22)
+    # Key message strip -- visible at bottom of content area
+    _rect(slide, Inches(0.2), Inches(6.75), Inches(12.9), Inches(0.28), LIGHT, BORDER)
+    _txt(slide,
+         "Two-level pattern: star spacing + radial zooid geometry.  "
+         "We model the geometry, not the full organism.",
+         Inches(0.35), Inches(6.78), Inches(12.6), Inches(0.24),
+         size=11, bold=False, color=INK, align=PP_ALIGN.CENTER)
 
     _slide_footer(slide, 1)
 
@@ -164,28 +159,35 @@ def make_slide2(prs):
                "Layer 1: Gierer-Meinhardt Turing field  |  Layer 2: Active zooid agents with angular repulsion")
 
     content_top = Inches(1.10)
-    content_h = Inches(5.45)
+    content_h = Inches(5.08)   # shorter to leave room for mechanism arrows
 
     # Left panel: Layer 1 - center selection schematic
     center_path = os.path.join(PANELS, "center_selection_schematic.png")
     _img(slide, center_path, Inches(0.2), content_top, Inches(6.3), content_h)
-    _txt(slide, "Layer 1: GM activator field -> Turing spots -> star center positions",
-         Inches(0.2), Inches(6.62), Inches(6.3), Inches(0.3),
+    _txt(slide, "Layer 1: Turing field places star centers",
+         Inches(0.2), Inches(6.25), Inches(6.3), Inches(0.25),
          size=10, color=INK, align=PP_ALIGN.CENTER)
 
     # Right panel: Layer 2 - single star mechanism (clean vs chiral)
     single_path = os.path.join(PANELS, "single_star_mechanism.png")
     _img(slide, single_path, Inches(6.7), content_top, Inches(6.4), content_h)
-    _txt(slide, "Layer 2: radial spring + angular arm repulsion -> discrete lobes. Chirality twists.",
-         Inches(6.7), Inches(6.62), Inches(6.4), Inches(0.3),
+    _txt(slide, "Layer 2: angular repulsion forms discrete arms. Chirality twists.",
+         Inches(6.7), Inches(6.25), Inches(6.4), Inches(0.25),
          size=10, color=INK, align=PP_ALIGN.CENTER)
 
-    # Key equation line
-    _txt(slide,
-         "Angular repulsion: push arm groups apart until they reach equal angular spacing. "
-         "Without it: ring. With it: discrete arms.",
-         Inches(0.3), Inches(7.05), Inches(13.0), Inches(0.35),
-         size=10, color=ACCENT, align=PP_ALIGN.CENTER, italic=True)
+    # Concise mechanism arrow strip
+    mech_items = [
+        ("Turing field", "centers", GREEN),
+        ("radial spring + angular repulsion", "discrete arms", INK),
+        ("chirality omega", "measurable swirl", ACCENT),
+    ]
+    _rect(slide, Inches(0.2), Inches(6.58), Inches(12.9), Inches(0.45),
+          RGBColor(0xF0, 0xF0, 0xE8), BORDER)
+    for i, (cause, effect, col) in enumerate(mech_items):
+        x = Inches(0.4 + i * 4.3)
+        _txt(slide, cause + "  ->  " + effect,
+             x, Inches(6.65), Inches(4.1), Inches(0.32),
+             size=11, bold=(i == 0), color=col, align=PP_ALIGN.LEFT)
 
     _slide_footer(slide, 2)
 
@@ -229,10 +231,12 @@ def make_slide3(prs):
         _txt(slide, label, bx + Inches(0.1), Inches(6.82), Inches(3.9), Inches(0.2),
              size=9, color=INK, align=PP_ALIGN.LEFT)
 
-    _txt(slide, "Top row: omega = 0 (radial). Bottom row: omega = 2.5 (chiral). "
-         "Arms self-organize from noise. No global template.",
+    _txt(slide,
+         "Top: omega = 0, radial. Bottom: omega = 2.5, chiral.  "
+         "Random init -> radial arms -> chirality adds swirl.  "
+         "Play live: outputs/movies/star_formation_clean.gif",
          Inches(0.4), Inches(7.13), Inches(12.5), Inches(0.25),
-         size=9, color=BORDER, italic=True, align=PP_ALIGN.CENTER)
+         size=9, color=RGBColor(0x44, 0x44, 0x44), italic=True, align=PP_ALIGN.CENTER)
 
     _slide_footer(slide, 3)
 
@@ -261,21 +265,26 @@ def make_slide4(prs):
 
     regimes = [
         ("Uniform mat", "low Dh/Da, no Turing spots", INK),
-        ("Clean stars", "moderate k_r, low omega (best)", GREEN),
+        ("Clean stars", "moderate k_r, low omega  (best)", GREEN),
         ("Twisted stars", "moderate k_r, high omega", ACCENT),
-        ("Merged", "overcrowded, too many agents", ACCENT),
+        ("Spots, no arms", "k_r too low", INK),
+        ("Merged", "overcrowded", ACCENT),
         ("Fragmented", "high Dr, noise breaks arms", ACCENT),
-        ("Spots, no arms", "k_r too low for arm confinement", INK),
     ]
     for i, (regime, desc, col) in enumerate(regimes):
         col_i = i % 3
         row_i = i // 3
         x = Inches(0.4 + col_i * 4.3)
-        y = Inches(6.52 + row_i * 0.38)
+        y = Inches(6.48 + row_i * 0.30)
         _txt(slide, f"{regime}: {desc}",
-             x, y, Inches(4.1), Inches(0.35),
+             x, y, Inches(4.1), Inches(0.28),
              size=10, color=col, align=PP_ALIGN.LEFT,
              bold=(regime in ("Clean stars",)))
+
+    # Punchline
+    _txt(slide, "One run is a demo.  A phase diagram is the result.",
+         Inches(0.4), Inches(7.12), Inches(12.5), Inches(0.25),
+         size=11, bold=True, color=INK, align=PP_ALIGN.CENTER)
 
     _slide_footer(slide, 4)
 
@@ -360,9 +369,9 @@ def make_slide5(prs):
     _rect(slide, Inches(0.2), Inches(6.35), Inches(12.9), Inches(0.75),
           RGBColor(0x1F, 0x24, 0x21))
     _txt(slide,
-         "Takeaway: A Turing field plus angular repulsion is sufficient to generate "
-         "star-shaped colonial geometry from local rules. Chirality is measurable. "
-         "This is a geometric model, not a biological one, and we say so.",
+         "Local rules can make living geometry.  "
+         "Turing field places centers. Angular repulsion forms arms. "
+         "Chirality adds swirl. Toy geometric model -- not a full Botryllus model.",
          Inches(0.5), Inches(6.45), Inches(12.4), Inches(0.55),
          size=12, bold=False, color=LIGHT, align=PP_ALIGN.CENTER)
 
@@ -377,7 +386,8 @@ def make_slide5(prs):
         "from local agent arm formation. That separation is physically principled. "
         "LLM also designed the metric hierarchy -- each metric catches a specific failure mode. "
         "Both were verified, not accepted blindly. "
-        "End: Turing instability plus angular repulsion generates star colonial geometry from local rules. "
+        "End: Local rules can make living geometry. "
+        "This is a toy geometric model -- not a full Botryllus developmental model, and we say so. "
         "Timing: 60-70 seconds.")
 
 
