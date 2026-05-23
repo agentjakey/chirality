@@ -9,7 +9,8 @@ from .style import (
     apply_notebook_style,
 )
 from .plots import plot_field, plot_phase_diagram, plot_particle_snapshot, plot_trajectories
-from .animations import save_field_gif, save_particle_gif
+from .animations import save_field_gif, save_particle_gif, save_zooid_gif
+from . import panels
 
 __all__ = [
     "BG", "INK", "ACCENT", "GREEN", "NEUTRAL",
@@ -22,4 +23,6 @@ __all__ = [
     "plot_trajectories",
     "save_field_gif",
     "save_particle_gif",
+    "save_zooid_gif",
+    "panels",
 ]
