@@ -61,6 +61,7 @@ from .config import (
 
 from . import model_library
 from . import visualization
+from . import star_ascidian
 
 __version__ = "0.1.0"
 __all__ = [

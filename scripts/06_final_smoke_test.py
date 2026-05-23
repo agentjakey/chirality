@@ -141,6 +141,59 @@ def test_visualization_imports():
     check("visualization: BG is hex color", isinstance(BG, str) and BG.startswith("#"))
 
 
+def test_star_ascidian():
+    from chirality.star_ascidian.center_field import generate_star_centers, compute_center_quality
+    from chirality.star_ascidian.zooid_agents import simulate_zooid_agents
+    from chirality.star_ascidian import metrics as star_metrics
+    from chirality.star_ascidian.hybrid_model import simulate_star_ascidian_colony, PRESETS
+
+    # Layer 1: center field (tiny run)
+    fd = generate_star_centers(grid_size=16, L=5.0, n_steps=200, n_snapshots=2, seed=7)
+    check("star: field shape", fd["field"].shape == (16, 16))
+    check("star: field finite", np.all(np.isfinite(fd["field"])))
+    centers = fd["centers"]
+    if len(centers) == 0:
+        centers = np.array([[2.5, 2.5]])
+    check("star: centers array 2D", centers.ndim == 2 and centers.shape[1] == 2)
+    cq = fd["quality"]
+    check("star: quality keys present", "n_centers" in cq and "spacing_cv" in cq)
+
+    # Layer 2: zooid agents (tiny run)
+    zr = simulate_zooid_agents(
+        centers=centers, n_per_center=7, n_arms=7, L=5.0,
+        r_target=1.0, v0=0.05, Dr=0.04, omega=0.0,
+        k_attract=0.3, k_radial=2.0, k_angular=0.6, k_ev=0.4, sigma_ev=0.18,
+        dt=0.02, n_steps=30, n_snapshots=3, mode="radial_clean",
+        boundary="periodic", seed=9,
+    )
+    check("star: zooid positions shape", zr.positions.ndim == 3 and zr.positions.shape[2] == 2)
+    check("star: zooid positions finite", np.all(np.isfinite(zr.positions)))
+    check("star: zooid assignments shape", zr.assignments.shape[0] == zr.N)
+
+    # Metrics
+    sl = star_metrics.star_likeness_score(zr, target_arms=7)
+    check("star: star_likeness in [0,1]", 0.0 <= sl <= 1.0 + 1e-6)
+    swirl = star_metrics.swirl_score(zr)
+    check("star: swirl_score finite", np.isfinite(swirl))
+    frag = star_metrics.fragmentation_score(zr)
+    check("star: fragmentation_score in [0,1]", 0.0 <= frag <= 1.0 + 1e-6)
+
+    # Hybrid model (smallest preset params)
+    check("star: PRESETS dict non-empty", len(PRESETS) >= 5)
+    result = simulate_star_ascidian_colony(
+        preset="clean_star_systems", seed=7,
+        n_snapshots=2,
+        n_field_steps=150,
+        n_steps=30,
+        grid_size=16,
+        L=5.0,
+        min_distance=1.0,
+    )
+    check("star: StarColonyResult has zooid", hasattr(result, "zooid"))
+    check("star: StarColonyResult metrics present", "star_likeness_score" in result.metrics)
+    check("star: StarColonyResult preset name", result.preset == "clean_star_systems")
+
+
 def main():
     print("=" * 60)
     print("Chirality Atlas: Final Smoke Test")
@@ -154,6 +207,7 @@ def main():
         ("Gray-Scott", test_gray_scott),
         ("Active Particles", test_active_particles),
         ("Visualization imports", test_visualization_imports),
+        ("Star Ascidian model", test_star_ascidian),
     ]
 
     for name, fn in tests:
