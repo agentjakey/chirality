@@ -166,7 +166,12 @@ def _render_header():
     with c2:
         st.markdown(
             "<p class='app-title'>Chirality Atlas: Star Ascidian Edition</p>"
-            "<p class='app-subtitle'>Can local rules generate a living star pattern?</p>",
+            "<p class='app-subtitle'>Can local rules generate a living star pattern?</p>"
+            "<p class='app-scope'>"
+            "A toy geometric model of star ascidian colony morphology using Turing center selection "
+            "and active zooid arm formation. "
+            "<strong>We model the visible geometry, not the full organism.</strong>"
+            "</p>",
             unsafe_allow_html=True,
         )
     st.markdown("<hr style='margin:0.4rem 0 0.8rem 0;border-color:#DDD5C8'/>",
@@ -195,7 +200,7 @@ def _tab_target():
         unsafe_allow_html=True,
     )
 
-    st.markdown("## Biological Target: *Botryllus schlosseri*")
+    st.markdown("## Observe: *Botryllus schlosseri* Colony")
     st.markdown(
         "*Botryllus schlosseri* is a colonial tunicate (sea squirt) that tiles "
         "hard substrates as a mat of star-shaped systems. Each star consists of "
@@ -266,13 +271,22 @@ def _tab_target():
             )
 
     st.markdown(
-        "<div style='background:#E8F0EC;border-left:4px solid #315C4C;"
-        "border-radius:0 5px 5px 0;padding:0.8rem 1.2rem;margin:1rem 0'>"
-        "<strong style='color:#315C4C'>Judge takeaway:</strong>"
-        "<span style='color:#1F2421'> We decompose the biological image into two modeling problems: "
-        "center placement (Layer 1: Turing activator-inhibitor field) and arm formation "
-        "(Layer 2: active agents with angular repulsion). Each layer is independently "
-        "tunable and physically motivated.</span>"
+        "<div class='judge-card'>"
+        "<strong>Judge takeaway:</strong>"
+        " We split the biological image into two modeling problems: "
+        "where stars are placed (Layer 1: Turing activator-inhibitor field) and "
+        "how arms form around each center (Layer 2: active agents with angular repulsion). "
+        "Each layer is independently tunable and physically motivated."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        "<div class='scope-card'>"
+        "<strong>Scope:</strong> "
+        "This is a toy geometric model. It reproduces the visible spatial signature -- "
+        "center spacing and radial arm structure -- not Botryllus biochemistry, "
+        "developmental staging, or immune recognition."
         "</div>",
         unsafe_allow_html=True,
     )
@@ -597,7 +611,7 @@ def _tab_model_builder():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _tab_phase_explorer():
-    st.markdown("## Phase Explorer: Parameter Space")
+    st.markdown("## Explore: Phases of Living Geometry")
 
     st.markdown(
         "<div style='background:#1F2421;border-radius:5px;padding:0.6rem 1.2rem;"
@@ -772,7 +786,7 @@ def _tab_phase_explorer():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _tab_movie_gallery():
-    st.markdown("## Movie Gallery")
+    st.markdown("## Simulate: Arms in Motion")
     st.markdown(
         "Arms self-organize from random initialization into star-shaped colonies. "
         "Each frame is one simulation snapshot. **Start with the first two** for the clearest story."
@@ -859,7 +873,7 @@ def _tab_movie_gallery():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _tab_mechanism():
-    st.markdown("## Mechanism: Centers First, Stars Second")
+    st.markdown("## Hypothesize: Centers First, Stars Second")
     st.markdown(
         "Two local rules explain two levels of spatial order. "
         "Colony-scale center spacing emerges from a reaction-diffusion instability. "
@@ -1097,51 +1111,62 @@ def _tab_model_library():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _tab_llm_notebook():
-    st.markdown("## LLM Lab Notebook")
+    st.markdown("## Explain: How LLMs Helped Without Replacing Verification")
     st.markdown(
-        "How Claude (claude-sonnet-4-6) was used scientifically. "
-        "Every generated function was verified with shape checks, finiteness checks, "
-        "and physical sanity checks before being used in any figure."
+        "Claude (claude-sonnet-4-6) contributed to the scientific design, not just the code. "
+        "All contributions were verified before use. All scientific decisions remained human."
     )
 
+    _llm_c1, _llm_c2, _llm_c3 = st.columns(3, gap="medium")
+
+    with _llm_c1:
+        st.markdown(
+            "<div class='llm-card'>"
+            "<div class='llm-card-title'>Model decomposition</div>"
+            "LLM proposed separating center placement from arm formation. "
+            "We described the biological pattern; it suggested a Turing field for centers "
+            "and active agents for arms. This was not our initial design. "
+            "The single-layer alternative required explicit center-repulsion rules "
+            "that the Turing field provides automatically."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    with _llm_c2:
+        st.markdown(
+            "<div class='llm-card'>"
+            "<div class='llm-card-title'>Metric design</div>"
+            "LLM proposed a hierarchy of five metrics, each targeting a specific failure mode: "
+            "radial_order (catches rings without arms), arm_count, swirl_score "
+            "(cannot be faked by a non-rotating pattern), fragmentation (catches escaped agents). "
+            "Without these, visually plausible output could hide failures."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    with _llm_c3:
+        st.markdown(
+            "<div class='llm-card' style='border-top-color:#7AA8C8'>"
+            "<div class='llm-card-title' style='color:#7AA8C8'>Human verification</div>"
+            "Equations checked against literature. "
+            "Every generated function smoke-tested for shape, finiteness, and expected physics. "
+            "A broadcast error in swirl score was caught and corrected manually. "
+            "Biological caveats were added by the human -- LLM tended to overclaim scope."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
     st.markdown(
-        "<div style='background:#E8F0EC;border-left:4px solid #315C4C;"
-        "border-radius:0 5px 5px 0;padding:0.8rem 1.2rem;margin-bottom:1.2rem'>"
-        "<strong style='color:#315C4C;font-size:1.0rem'>Two strongest contributions:</strong><br><br>"
-        "<span style='color:#1F2421'>"
-        "<strong>1. Proposed the two-layer architecture.</strong><br>"
-        "We described the star ascidian colony and asked what minimal mechanisms "
-        "explain the two levels of spatial organization. "
-        "LLM proposed separating center placement (Turing field) from arm formation "
-        "(active agents with angular repulsion). Not our initial design. "
-        "We started with a single-layer model that required ad hoc center-repulsion rules. "
-        "The two-layer version produces regular spacing automatically.<br><br>"
-        "<strong>2. Designed anti-cheat metrics.</strong><br>"
-        "Early simulations looked like stars but failed quantitative checks, or vice versa. "
-        "LLM proposed: radial_order (catches rings without arms), "
-        "arm_count (catches rings), swirl_score (can only be faked by a rotating pattern), "
-        "fragmentation (catches escaped agents). "
-        "Each targets a specific failure mode that passes visual inspection."
-        "</span>"
+        "<div class='scope-card'>"
+        "<strong>One failure case worth noting:</strong> "
+        "Plausible-looking simulations can still fail metrics. "
+        "Early runs looked like stars visually but had ring-like agent distributions "
+        "(radial_order high, arm_count near 1). "
+        "We used the full test suite and sanity checks rather than judging by visuals alone."
         "</div>",
         unsafe_allow_html=True,
     )
-
-    st.markdown(
-        "<div style='background:#FFFFFF;border:1px solid #DDD5C8;"
-        "border-left:4px solid #7AA8C8;border-radius:0 5px 5px 0;"
-        "padding:0.8rem 1.2rem;margin-bottom:1.2rem'>"
-        "<strong style='color:#1F2421'>Human verification:</strong>"
-        "<ul style='color:#1F2421;margin:0.4rem 0 0 0;padding-left:1.2rem;font-size:0.88rem'>"
-        "<li>Equations checked against literature (GM IMEX derivation, active particle dynamics)</li>"
-        "<li>Every generated function smoke-tested: shape checks, finiteness, expected physics</li>"
-        "<li>Swirl score broadcast error caught and corrected manually</li>"
-        "<li>Phase diagram outputs compared against known Turing instability conditions</li>"
-        "<li>All biological caveats added by human -- LLM tended to overclaim scope</li>"
-        "</ul>"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("---")
 
     with st.expander("Best prompt 1: IMEX Gierer-Meinhardt solver", expanded=False):
         st.code(
@@ -1300,15 +1325,12 @@ def _tab_presentation():
 
     # Canonical PDF reference
     st.markdown(
-        "<div style='background:#1F2421;border-radius:5px;padding:0.7rem 1.2rem;"
-        "margin-bottom:0.8rem'>"
-        "<span style='color:#F7F3EA;font-size:0.82rem;font-weight:700;"
-        "letter-spacing:0.07em'>FINAL PRESENTATION PDF</span><br>"
-        "<code style='color:#7AA8C8;font-size:0.9rem'>"
-        "outputs/submission/Chirality_Atlas_Star_Ascidian_FINAL.pdf</code><br>"
-        "<span style='color:#DDD5C8;font-size:0.82rem'>"
-        "Editable backup (PPTX): "
-        "outputs/slides/Chirality_Atlas_Star_Ascidian_Edition.pptx</span>"
+        "<div class='pdf-box'>"
+        "<div class='pdf-box-label'>Final presentation</div>"
+        "<div class='pdf-box-path'>"
+        "outputs/submission/Chirality_Atlas_Star_Ascidian_FINAL.pdf</div>"
+        "<div class='pdf-box-backup'>"
+        "Editable backup: outputs/slides/Chirality_Atlas_Star_Ascidian_Edition.pptx</div>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -1319,6 +1341,21 @@ def _tab_presentation():
         "<strong style='color:#315C4C'>Live demo order:</strong>"
         "<span style='color:#1F2421'> Target Pattern -> Mechanism -> Movie Gallery "
         "-> Phase Explorer -> (Presentation Mode as backup).</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### 30-Second Pitch")
+    st.markdown(
+        "<div class='judge-card'>"
+        "<em>Botryllus schlosseri</em> tiles substrates as a mat of radial star systems. "
+        "Each star has zooids arranged outward from a shared center. "
+        "Stars maintain regular spacing without merging. "
+        "We asked whether two local rules can generate both levels of organization from scratch.<br><br>"
+        "A Gierer-Meinhardt Turing field places star centers at quasi-regular spacing. "
+        "Active agents with radial confinement and angular repulsion form discrete arms. "
+        "Adding chirality measurably rotates the arm pattern without immediately destroying it. "
+        "This is a toy geometric model of the visible spatial signature, not the full organism."
         "</div>",
         unsafe_allow_html=True,
     )
