@@ -4,10 +4,13 @@ Chirality Atlas: Particles, Patterns, and Handedness in Active Matter.
 A unified scientific simulation package for the UCSD Vibe Coding
 Active Matter 2026 hackathon.
 
-Two tracks:
-  1. Particle simulations (ABP, chiral ABP, chiral Vicsek)
-  2. Pattern formation (Gray-Scott reaction-diffusion with gradients,
-     obstacles, and a chiral source)
+Subpackages:
+  model_library -- reference implementations of 6 physics models
+  visualization -- plotting, phase diagrams, animations
+
+Legacy tracks (kept for app.py compatibility):
+  particle_sim, particle_metrics -- ABP, chiral ABP, Vicsek
+  pattern_sim, pattern_metrics   -- Gray-Scott reaction-diffusion
 """
 
 from .particle_sim import (
@@ -55,6 +58,9 @@ from .config import (
     ObstacleConfig,
     ChiralSourceConfig,
 )
+
+from . import model_library
+from . import visualization
 
 __version__ = "0.1.0"
 __all__ = [
