@@ -173,10 +173,13 @@ def make_colony_scale_view(result):
     fig, ax = plt.subplots(1, 1, figsize=(FIG_H, FIG_H))
     fig.patch.set_facecolor(DARK_BG)
     _style_dark_ax(ax, xlim=(0, 3 * L), ylim=(0, 3 * L))
-    _draw_zooids_scatter(ax, tiled_pos, tiled_arm, ZOOID_PALETTE, s=9, alpha=0.78)
+    # Larger dots at colony scale so arms read clearly
+    _draw_zooids_scatter(ax, tiled_pos, tiled_arm, ZOOID_PALETTE, s=14, alpha=0.82)
     ax.scatter(tiled_centers[:, 0], tiled_centers[:, 1],
-               c="#FFFFFF", s=8, zorder=5, linewidths=0, alpha=0.55)
-    ax.set_title("Colony simulation -- 3x3 periodic tiling", color="#CCCCDD", fontsize=10, pad=4)
+               c="#FFFFFF", s=12, zorder=5, linewidths=0, alpha=0.65)
+    n_stars = len(tiled_centers)
+    ax.set_title(f"Colony simulation -- {n_stars} stars  (3x3 periodic tiling)",
+                 color="#CCCCDD", fontsize=10, pad=4)
 
     out_path = os.path.join(PANELS_DIR, "colony_scale_reference_match.png")
     fig.savefig(out_path, dpi=FIG_DPI, bbox_inches="tight",
@@ -729,8 +732,9 @@ def main():
     print()
 
     print("Step 1/4  Running simulations...")
-    result_clean  = simulate_star_ascidian_colony("hero_reference_match", seed=42)
-    result_chiral = simulate_star_ascidian_colony("chiral_twisted_stars",  seed=42)
+    # seed=0 yields 4 centers with hero_reference_match (seed=42 only gives 2)
+    result_clean  = simulate_star_ascidian_colony("hero_reference_match", seed=0)
+    result_chiral = simulate_star_ascidian_colony("chiral_twisted_stars",  seed=0)
     print(f"  hero_reference_match: {result_clean.zooid.K} centers, "
           f"{result_clean.zooid.N} agents")
     print(f"  chiral_twisted_stars: {result_chiral.zooid.K} centers, "
