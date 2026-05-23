@@ -1,0 +1,29 @@
+# Do not include large generated outputs in the Docker image
+outputs/
+notebooks/
+
+# Development and docs
+docs/
+.git/
+.gitignore
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+src/**/__pycache__/
+scripts/__pycache__/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+*.npz
+*.npy
+
+# Logs and temp
+*.log
+*.tmp
+.venv/
+venv/

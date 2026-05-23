@@ -220,3 +220,7 @@ __marimo__/
 .claude/
 CLAUDE.md
 AGENTS.md
+
+# Generated outputs (keep .gitkeep, ignore everything else in outputs/)
+outputs/**
+!outputs/.gitkeep

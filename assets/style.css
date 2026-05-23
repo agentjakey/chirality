@@ -1,0 +1,221 @@
+/*
+  Chirality Atlas: Custom Streamlit Styles
+  Design: warm scientific notebook
+  Tested on Streamlit >= 1.30
+
+  Palette:
+    Background  #F7F3EA
+    Ink         #1F2421
+    Accent      #C15A3A
+    Green       #315C4C
+    Panel       #FFFFFF / #EFE8DC
+    Border      #DDD5C8
+*/
+
+/* ---- Global background ---- */
+.stApp {
+    background-color: #F7F3EA;
+}
+
+/* ---- Typography ---- */
+html, body, [class*="css"] {
+    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', serif;
+    color: #1F2421;
+}
+
+/* Headers */
+h1 {
+    color: #1F2421;
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    border-bottom: 2px solid #DDD5C8;
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+h2 {
+    color: #1F2421;
+    font-size: 1.25rem;
+    font-weight: 700;
+    border-bottom: 1px solid #DDD5C8;
+    padding-bottom: 0.25rem;
+    margin-top: 1.2rem;
+}
+h3 {
+    color: #315C4C;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 1rem;
+}
+
+/* ---- Tab bar ---- */
+.stTabs [data-baseweb="tab-list"] {
+    background-color: #EFE8DC;
+    border-bottom: 2px solid #DDD5C8;
+    gap: 0;
+}
+.stTabs [data-baseweb="tab"] {
+    color: #555;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.88rem;
+    font-family: 'Georgia', serif;
+    border-radius: 0;
+    background-color: transparent;
+}
+.stTabs [aria-selected="true"] {
+    color: #C15A3A;
+    border-bottom: 2px solid #C15A3A;
+    font-weight: 700;
+}
+
+/* ---- Buttons ---- */
+.stButton > button {
+    background-color: #315C4C;
+    color: #F7F3EA;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Georgia', serif;
+    font-size: 0.9rem;
+    padding: 0.45rem 1.3rem;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+.stButton > button:hover {
+    background-color: #C15A3A;
+    color: #F7F3EA;
+}
+.stButton > button[kind="primary"] {
+    background-color: #C15A3A;
+}
+.stButton > button[kind="primary"]:hover {
+    background-color: #A34830;
+}
+
+/* ---- Metric cards ---- */
+[data-testid="stMetric"] {
+    background-color: #FFFFFF;
+    border: 1px solid #DDD5C8;
+    border-radius: 4px;
+    padding: 0.8rem 1rem;
+    box-shadow: 0 1px 3px rgba(31, 36, 33, 0.05);
+}
+[data-testid="stMetricLabel"] {
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: 'Georgia', serif;
+}
+[data-testid="stMetricValue"] {
+    font-size: 1.6rem;
+    color: #1F2421;
+    font-family: 'Georgia', serif;
+}
+
+/* ---- Info / warning / success boxes ---- */
+[data-testid="stInfo"] {
+    background-color: #EAF0EC;
+    border-left: 4px solid #315C4C;
+    border-radius: 0 4px 4px 0;
+    color: #1F2421;
+}
+[data-testid="stWarning"] {
+    background-color: #FFF3EE;
+    border-left: 4px solid #C15A3A;
+    border-radius: 0 4px 4px 0;
+}
+[data-testid="stSuccess"] {
+    background-color: #EAF0EC;
+    border-left: 4px solid #315C4C;
+}
+
+/* ---- Sidebar ---- */
+section[data-testid="stSidebar"] {
+    background-color: #EFE8DC;
+    border-right: 1px solid #DDD5C8;
+}
+
+/* ---- Sliders ---- */
+[data-testid="stSlider"] > div > div > div {
+    color: #C15A3A;
+}
+
+/* ---- Expander ---- */
+details[data-testid="stExpander"] {
+    background-color: #FFFFFF;
+    border: 1px solid #DDD5C8;
+    border-radius: 4px;
+}
+details[data-testid="stExpander"] summary {
+    color: #315C4C;
+    font-weight: 700;
+    font-size: 0.92rem;
+}
+
+/* ---- Code blocks ---- */
+code {
+    background-color: #EFE8DC;
+    color: #315C4C;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    font-size: 0.88em;
+}
+.stCodeBlock {
+    background-color: #2A2E2B;
+    border-radius: 4px;
+}
+
+/* ---- Divider ---- */
+hr {
+    border: none;
+    border-top: 1px solid #DDD5C8;
+    margin: 1.5rem 0;
+}
+
+/* ---- Selectbox ---- */
+[data-testid="stSelectbox"] label {
+    font-size: 0.85rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* ---- Input labels ---- */
+.stSlider label, .stSelectbox label, .stCheckbox label {
+    font-size: 0.85rem;
+    color: #444;
+    letter-spacing: 0.02em;
+}
+
+/* ---- Custom scientific panel class ---- */
+.sci-panel {
+    background-color: #FFFFFF;
+    border: 1px solid #DDD5C8;
+    border-radius: 4px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+/* ---- Slide block for presentation mode ---- */
+.slide-block {
+    background-color: #FFFFFF;
+    border: 1.5px solid #DDD5C8;
+    border-left: 5px solid #C15A3A;
+    border-radius: 4px;
+    padding: 1.5rem 1.8rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ---- Figure caption ---- */
+.fig-caption {
+    font-size: 0.82rem;
+    color: #777;
+    font-style: italic;
+    text-align: center;
+    margin-top: 0.3rem;
+}
+
+/* ---- Scrollable plot container ---- */
+.plot-container {
+    overflow: hidden;
+}
