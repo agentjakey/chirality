@@ -94,15 +94,17 @@ The app opens at http://localhost:8501.
 
 ## What to inspect in the app
 
-**Tab 1 (Target Pattern):** Reference image + feature checklist. Opens with the biological question.
+Tab order: Target Pattern | Mechanism | Movie Gallery | Phase Explorer | LLM Lab Notebook | Presentation Mode | Model Builder
 
-**Tab 2 (Model Builder):** Run live simulation. Defaults give clean stars. Set omega=2.5 for chirality.
+**Tab 1 (Target Pattern):** Reference image + colony-scale simulation match side by side. Feature checklist. Opens with the biological question.
 
-**Tab 4 (Movie Gallery):** Two hero GIFs: arms self-organizing (clean) and arms rotating (chiral).
+**Tab 2 (Mechanism):** center_selection_schematic (Layer 1) + single_star_mechanism (Layer 2) side by side. Physical intuition box explains why each rule is necessary.
 
-**Tab 3 (Phase Explorer):** Load pregenerated Sweep A. Best stars at top-left of heatmap.
+**Tab 3 (Movie Gallery):** Two hero GIFs: arms self-organizing (clean) and arms rotating (chiral).
 
-**Tab 6 (LLM Notebook):** Exact prompts, one failure case, how outputs were validated.
+**Tab 4 (Phase Explorer):** Pregenerated phase_diagram_with_regimes shown by default for Sweep A. Six named regimes with labels.
+
+**Tab 5 (LLM Lab Notebook):** Two strongest contributions, exact prompts, one failure case, how outputs were validated.
 
 ---
 
@@ -118,7 +120,7 @@ The app opens at http://localhost:8501.
 
 ## Backup if live app fails
 
-1. Open `outputs/panels/` -- 6 PNG panels, all slide-ready (1440x810 px)
+1. Open `outputs/panels/` -- 11 PNG panels, all slide-ready
 2. Open `outputs/movies/star_formation_clean.gif` in Chrome
 3. Run `python scripts/05_make_all_assets.py` -- regenerates all 47 outputs (~15 minutes)
 

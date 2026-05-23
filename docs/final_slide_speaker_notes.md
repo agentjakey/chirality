@@ -22,7 +22,7 @@ Those are two distinct levels of spatial organization.
 We asked whether two local rules can reproduce both of them.
 
 The right panel is our simulation. Many star systems. Radial arms. Comparable spacing.
-The answer is yes."
+Yes for the core geometry."
 
 Transition: "Let me explain how the mechanism works."
 
@@ -128,8 +128,10 @@ and biologically motivated. It worked better than the original approach.
 Claude also designed the metric hierarchy. Each metric catches a specific failure mode
 that looks fine on visual inspection alone. Both contributions were verified, not accepted.
 
-Takeaway: a Turing field and angular repulsion are sufficient to generate
-star-shaped colonial geometry from local rules. Clean result. Honest scope."
+Core result: a Turing activator-inhibitor field places star centers.
+Active agents with angular repulsion form arms.
+Chirality adds measurable swirl without immediately destroying the star geometry.
+This is a toy geometric model, and we say so."
 
 End with the takeaway bar text.
 
