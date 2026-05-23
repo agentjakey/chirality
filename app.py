@@ -205,9 +205,18 @@ def _tab_target():
         "consistent rotational handedness, a biological chirality signature."
     )
 
-    col_img, col_info = st.columns([1, 1], gap="large")
+    st.markdown(
+        "<div class='notice-box'>"
+        "<strong>What to notice:</strong> "
+        "(1) Repeated star spacing -- stars tile the substrate at regular intervals without merging. "
+        "(2) Internal radial geometry -- each star has zooids arranged outward from a shared center. "
+        "(3) Irregular biological variation -- spacing and arm count vary, but the pattern persists."
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    with col_img:
+    ref_c, colony_c = st.columns([1, 1], gap="medium")
+    with ref_c:
         ref_path = os.path.join("assets", "reference", "star_ascidian_reference.jpg")
         if os.path.exists(ref_path):
             st.image(ref_path, caption="Botryllus schlosseri colony (reference)",
@@ -215,9 +224,20 @@ def _tab_target():
         else:
             _show_image_safe(
                 os.path.join("outputs", "star_ascidian", "simulation_vs_target_features.png"),
-                caption="Simulation vs target features (pregenerated). "
-                        "Add assets/reference/star_ascidian_reference.jpg for the real organism.",
+                caption="Reference (add assets/reference/star_ascidian_reference.jpg)",
             )
+    with colony_c:
+        _show_image_safe(
+            os.path.join("outputs", "panels", "colony_scale_reference_match.png"),
+            caption="Simulation: colony-scale view (3x3 tiled periodic boundary)",
+        )
+
+    col_img, col_info = st.columns([1, 1], gap="large")
+    with col_img:
+        _show_image_safe(
+            os.path.join("outputs", "panels", "slide1_target_and_simulation.png"),
+            caption="Reference | GM field + centers | Agent colony",
+        )
 
     with col_info:
         st.markdown("### Target Features")
@@ -254,10 +274,10 @@ def _tab_target():
     st.markdown("---")
     st.markdown("### Model Hypothesis")
     st.info(
-        "A two-layer generative model -- an activator-inhibitor (Gierer-Meinhardt) "
-        "field for center placement, and active zooid-like particles for arm formation "
-        "-- can reproduce the spatial geometry of Botryllus star colonies using only "
-        "local interaction rules, without reference to organism-specific biochemistry."
+        "A two-layer generative model -- an activator-inhibitor field for center "
+        "placement, and active zooid-like particles for arm formation -- can reproduce "
+        "the spatial geometry of a star ascidian colony using only local interaction "
+        "rules. We model the geometry, not the full organism."
     )
 
     with st.expander("Physical intuition: why each mechanism works"):
@@ -305,13 +325,7 @@ r_target. At high omega, agents overshoot and arm structure blurs.
 - **Colonial immune recognition** (self/non-self fusions) is not modeled.
         """)
 
-    st.markdown("---")
-    st.markdown("### What the Simulation Produces")
-    _show_image_safe(
-        os.path.join("outputs", "panels", "slide1_target_and_simulation.png"),
-        caption="Left: target morphology schematic. Center: GM activator field. "
-                "Right: zooid agent final state.",
-    )
+    pass  # end of _tab_target
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -609,14 +623,19 @@ def _tab_phase_explorer():
     }
 
     if run_mode == "Load pregenerated (fast)":
-        _show_image_safe(
-            pregenerated_paths[sweep_name],
-            caption=f"Pregenerated: {sweep_name.split(' — ')[1]}",
-        )
-        _show_image_safe(
-            os.path.join("outputs", "panels", "slide4_phase_diagram.png"),
-            caption="Side-by-side star-likeness and swirl for sweep A.",
-        )
+        # Show the regime-labeled phase diagram as the primary view
+        regime_path = os.path.join("outputs", "panels", "phase_diagram_with_regimes.png")
+        if os.path.exists(regime_path) and sweep_name.startswith("A"):
+            _show_image_safe(
+                regime_path,
+                caption="Sweep A: star-likeness (left) and swirl score (right) "
+                        "with regime labels. Insets show preset snapshots.",
+            )
+        else:
+            _show_image_safe(
+                pregenerated_paths[sweep_name],
+                caption=f"Pregenerated: {sweep_name.split(' — ')[1]}",
+            )
 
     else:
         live_clicked = st.button("Run live sweep", key="phase_live_run")
@@ -750,50 +769,123 @@ def _tab_movie_gallery():
         )
 
     st.markdown("---")
-    st.markdown("### Additional Animations")
-
-    col_a, col_b = st.columns(2, gap="large")
-
-    with col_a:
-        st.markdown(
-            "<div style='font-size:0.95rem;font-weight:700;color:#1F2421;margin-bottom:0.4rem'>"
-            "3. Phase Transition: omega 0 to 5</div>",
-            unsafe_allow_html=True,
-        )
-        _show_gif_safe(os.path.join("outputs", "movies", "phase_transition_parameter_sweep.gif"))
-        st.markdown(
-            "<div style='font-size:0.88rem;color:#333;margin-top:0.4rem'>"
-            "Each frame shows a different omega value. Arm coherence degrades "
-            "gradually as chirality increases. No sharp phase boundary at this density."
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-    with col_b:
-        st.markdown(
-            "<div style='font-size:0.95rem;font-weight:700;color:#1F2421;margin-bottom:0.4rem'>"
-            "4. Single-Center Zoom: Zooid Dynamics</div>",
-            unsafe_allow_html=True,
-        )
-        _show_gif_safe(os.path.join("outputs", "movies", "active_zooid_dynamics.gif"))
-        st.markdown(
-            "<div style='font-size:0.88rem;color:#333;margin-top:0.4rem'>"
-            "Zoomed into one star center. Arms are not rigid: they fluctuate around "
-            "equilibrium angles due to rotational noise (Dr=0.04). "
-            "Radial spring prevents escape."
-            "</div>",
-            unsafe_allow_html=True,
-        )
+    st.markdown("### Colony Scale")
+    _show_gif_safe(os.path.join("outputs", "movies", "colony_scale_formation.gif"))
+    st.markdown(
+        "<div class='notice-box'>"
+        "<strong>What to notice:</strong> Many star centers tile the domain. "
+        "Each center develops its own arm cluster independently. "
+        "The regular spacing between centers comes from the GM field (Layer 1), "
+        "not from direct particle-particle repulsion between stars.<br>"
+        "<strong>Why it matters:</strong> This is the colony-level view. "
+        "Individual stars self-organize locally; "
+        "global regularity comes from the Turing mechanism."
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
     st.markdown("---")
     st.info(
-        "GIFs generated by `scripts/04_make_movies.py` using Pillow. "
+        "GIFs generated by scripts/make_visual_rescue.py. "
         "If animations appear static, open the .gif files directly in Chrome."
     )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 5 — MODEL LIBRARY
+# TAB 2 — MECHANISM
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _tab_mechanism():
+    st.markdown("## Mechanism: Centers First, Stars Second")
+    st.markdown(
+        "Two local rules explain two levels of spatial order. "
+        "Colony-scale center spacing emerges from a reaction-diffusion instability. "
+        "Within-star radial geometry emerges from attraction, confinement, and angular repulsion."
+    )
+
+    mech_left, mech_right = st.columns([1, 1], gap="large")
+    with mech_left:
+        st.markdown("### Layer 1: Center Placement")
+        st.markdown(
+            "An activator diffuses slowly; an inhibitor diffuses fast. "
+            "When the inhibitor-to-activator diffusion ratio is large enough, "
+            "the system spontaneously breaks into spots at a characteristic spacing. "
+            "These spots become star center positions. "
+            "**No explicit repulsion between centers is needed** -- "
+            "spacing comes from the diffusion ratio alone."
+        )
+        _show_image_safe(
+            os.path.join("outputs", "panels", "center_selection_schematic.png"),
+            caption="Left: raw GM activator field. Center: extracted centers. Right: center spacing.",
+        )
+
+    with mech_right:
+        st.markdown("### Layer 2: Arm Formation")
+        st.markdown(
+            "Agents (one per zooid) are attracted toward their assigned center "
+            "and confined at a target radius by a radial spring. "
+            "Agents in **different arm groups** repel each other tangentially. "
+            "This angular repulsion pushes arms apart until they reach "
+            "equal angular spacing. Without it, you get a ring. With it, you get stars. "
+            "The chirality parameter omega adds a persistent turning bias."
+        )
+        _show_image_safe(
+            os.path.join("outputs", "panels", "single_star_mechanism.png"),
+            caption="Single star: clean arms (omega=0) vs chiral arms (omega=2.5). "
+                    "Each lobe is one arm group; color encodes arm identity.",
+        )
+
+    st.markdown("---")
+    st.markdown("### Why These Two Layers?")
+
+    with st.expander("The biological analogy", expanded=True):
+        st.markdown(
+            """
+*Botryllus schlosseri* has two distinct spatial scales:
+
+- **Colony scale:** individual stars tile a substrate at regular spacing.
+  The spacing is determined by colony-level communication (signaling fields)
+  that suppress neighboring star initiation -- analogous to lateral inhibition.
+
+- **Star scale:** within each star, zooids arrange radially around a shared
+  central atrium. Local attraction and spacing rules within one star produce
+  the radial lobe geometry.
+
+The two-layer model matches this natural scale separation.
+Each layer uses different physics and can be tuned independently.
+This is the main architectural insight: separating the *where* (Layer 1)
+from the *how* (Layer 2).
+            """
+        )
+
+    with st.expander("Key equations (simplified)"):
+        st.code(
+            """
+Layer 1 -- Gierer-Meinhardt (IMEX scheme, Fourier space):
+    da/dt = rho * a^2 / (h * (1 + kappa*a^2)) - mu_a*a + rho_0 + Da * lap(a)
+    dh/dt = rho * a^2 - mu_h*h + Dh * lap(h)
+    Turing condition: Dh >> Da  (inhibitor diffuses much faster)
+
+Layer 2 -- Active zooid agents:
+    F_radial = k_r * (r_target - r) * r_hat      (spring toward r_target)
+    F_attract = -k_a * r_vec                     (toward center)
+    F_angular = -k_ang * (1 - |dphi|/sigma) * sign(dphi) * t_hat
+                                                 (push different arms apart)
+    d(theta)/dt = omega + noise(Dr)              (chirality + orientation noise)
+            """,
+            language="text",
+        )
+
+    _notice(
+        "The key creative choice is the two-layer separation. "
+        "A single-layer particle model can form star shapes, but requires "
+        "an explicit repulsion rule between centers to maintain regular spacing. "
+        "The Turing field provides this spacing automatically."
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 5 — MODEL LIBRARY (kept for reference, not in main tab bar)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _tab_model_library():
@@ -921,98 +1013,92 @@ def _tab_model_library():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 6 — LLM LAB NOTEBOOK
+# TAB 5 — LLM LAB NOTEBOOK
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _tab_llm_notebook():
     st.markdown("## LLM Lab Notebook")
     st.markdown(
-        "This documents how Claude (claude-sonnet-4-6) was used scientifically. "
-        "Not vibe coding -- every generated function was verified with at least three checks "
-        "before being used in any figure."
+        "How Claude (claude-sonnet-4-6) was used scientifically. "
+        "Every generated function was verified with shape checks, finiteness checks, "
+        "and physical sanity checks before being used in any figure."
     )
 
-    # Two strongest LLM contributions at the top
     st.markdown(
         "<div style='background:#E8F0EC;border-left:4px solid #315C4C;"
-        "border-radius:0 5px 5px 0;padding:0.8rem 1.2rem;margin-bottom:1rem'>"
-        "<strong style='color:#315C4C'>Two strongest contributions:</strong><br>"
+        "border-radius:0 5px 5px 0;padding:0.8rem 1.2rem;margin-bottom:1.2rem'>"
+        "<strong style='color:#315C4C;font-size:1.0rem'>Two strongest contributions:</strong><br><br>"
         "<span style='color:#1F2421'>"
-        "1. Proposed decomposing the biological image into two mechanisms: "
-        "center selection (Turing field) + radial zooid organization (agents). "
-        "Not our initial design. Led to the two-layer architecture.<br>"
-        "2. Designed metrics that cannot be fooled by pretty pictures: "
-        "radial_order, arm_count, swirl_score, fragmentation. "
-        "Each catches a specific failure mode invisible to visual inspection."
+        "<strong>1. Proposed the two-layer architecture.</strong><br>"
+        "We described the star ascidian colony and asked what minimal mechanisms "
+        "explain the two levels of spatial organization. "
+        "LLM proposed separating center placement (Turing field) from arm formation "
+        "(active agents with angular repulsion). Not our initial design. "
+        "We started with a single-layer model that required ad hoc center-repulsion rules. "
+        "The two-layer version produces regular spacing automatically.<br><br>"
+        "<strong>2. Designed anti-cheat metrics.</strong><br>"
+        "Early simulations looked like stars but failed quantitative checks, or vice versa. "
+        "LLM proposed: radial_order (catches rings without arms), "
+        "arm_count (catches rings), swirl_score (can only be faked by a rotating pattern), "
+        "fragmentation (catches escaped agents). "
+        "Each targets a specific failure mode that passes visual inspection."
         "</span>"
         "</div>",
         unsafe_allow_html=True,
     )
 
-    st.markdown("### Workflow Overview")
+    with st.expander("Best prompt 1: IMEX Gierer-Meinhardt solver", expanded=False):
+        st.code(
+            """Implement the Gierer-Meinhardt system in Fourier space with IMEX scheme.
+Treat diffusion implicitly:
+    denom_a = 1 + dt * (Da * k2 + mu_a)
+    denom_h = 1 + dt * (Dh * k2 + mu_h)
+Treat nonlinear reaction explicitly. In each step:
+1. Compute reaction_a = rho * a^2 / (h * (1 + kappa*a^2)) - mu_a*a + rho_0
+2. Update: a_hat = (a_hat + dt * fft(reaction_a)) / denom_a
+3. IFFT, take real part, clip to > 0
+The scheme must be unconditionally stable for diffusion.""",
+            language="text",
+        )
+        st.markdown(
+            "**Outcome:** Correct on first try. "
+            "Verified at dt=5.0 (10x default). No blowup."
+        )
+
+    with st.expander("Best prompt 2: Vectorized angular repulsion", expanded=False):
+        st.code(
+            """Numpy function for pairwise angular repulsion between N agents.
+assignments (N,): center index. arm_assignments (N,): arm index.
+For each pair (i,j) with same center, different arm:
+    dphi = phi_i - phi_j, wrapped to [-pi, pi]
+    sigma = 1.5 * 2*pi / n_arms
+    F = -k * (1 - |dphi|/sigma) * sign(dphi) * t_hat_i
+    where t_hat_i = [-r_hat_i_y, r_hat_i_x]
+Vectorize with numpy boolean masks. Return (N, 2) force array.""",
+            language="text",
+        )
+        st.markdown(
+            "**Outcome:** Correct on first try. "
+            "Verified: same-arm force = 0, adjacent-arm force pushes apart."
+        )
+
+    st.markdown("---")
+    st.markdown("### One Correction Worth Noting")
     st.markdown(
-        """
-The project followed an iterative loop:
-
-1. **Ideation** -- human described biological target; LLM proposed candidate model classes
-2. **Code generation** -- LLM wrote initial implementations of 6 reference models
-3. **Debugging** -- numerical instability caught by smoke test; LLM diagnosed root cause
-4. **Metric design** -- LLM proposed anti-cheat metrics when visual inspection was unreliable
-5. **Documentation** -- LLM wrote docstrings, technical notes, and this app
-
-At every step, the human ran the code, inspected outputs, and made the scientific judgments.
-        """
+        "**Swirl score broadcast error.** "
+        "Generated code used `np.column_stack([-r_hats[:, 0][:, None] * 0 - r_hats[:, 1], r_hats[:, 0]])`. "
+        "The `[:, None]` created shape (N, 1) which broadcast to (N, N) instead of (N, 2). "
+        "Caught by reading the traceback and comparing against the manually-written line in zooid_agents.py. "
+        "Fixed: `np.column_stack([-r_hats[:, 1], r_hats[:, 0]])`."
     )
 
     st.markdown("---")
-    st.markdown("### Two Surprising LLM Contributions")
-
-    with st.expander("A: Two-layer architecture (proposed by LLM)", expanded=True):
-        st.markdown(
-            """
-**The problem:** Initial concept was a single-layer model — active particles around
-randomly placed centers, with no field-based center placement.
-
-**What LLM proposed:** Separate the model into two layers with different timescales:
-a slow reaction-diffusion field to set positional information (colony-level organization),
-and a fast local agent dynamics to form arm morphology (zooid-level organization).
-The LLM cited the biological analogy: Botryllus development has both a blastogenic
-cycle (slow, colony-level) and individual zooid growth (fast, local).
-
-**Why it worked:** The separation of scales is physically principled and matches the
-biological reality. The GM field provides quasi-regular center spacing without
-requiring explicit distance rules between agents. The agent layer can be fully
-local while still producing globally regular patterns.
-
-**Human verification:** Ran both versions. Single-layer version produced irregular
-center spacing unless we added an explicit center-repulsion rule (which is ad hoc).
-Two-layer version produced regular spacing automatically from the Turing mechanism.
-        """
-        )
-
-    with st.expander("B: Anti-cheat metrics (designed with LLM)", expanded=True):
-        st.markdown(
-            """
-**The problem:** Early simulations looked like stars in a screenshot but metrics
-gave low scores, or looked wrong but metrics gave high scores. Visual inspection
-was not enough.
-
-**What LLM proposed:** A hierarchy of metrics designed to catch specific failure modes:
-
-- `radial_order_score`: catches models that produce agents everywhere but not at r_target
-- `arm_count_distribution`: uses `find_peaks` on the angular histogram — catches models
-  that produce a ring (high radial order) but not discrete arms
-- `angular_uniformity_score`: catches models that produce arms but at uneven angles
-- `swirl_score`: specifically detects the chiral signature — can't be faked by
-  a radially-symmetric pattern
-- `fragmentation_score`: catches cases where the pattern looks OK at the center
-  but many agents have escaped (high-noise regime)
-
-**Human verification:** Ran the metric suite on a uniform ring initialization
-(all agents at r_target, no angular structure). Radial order = 1.0, arm count = 0.
-The radial_order check alone would have given a false positive; arm count catches it.
-        """
-        )
+    st.markdown(
+        "**Human decisions:** equations, parameter values, biological scope, "
+        "and all verification steps. "
+        "LLM provided implementations and architectural suggestions; "
+        "humans made all scientific calls."
+    )
 
     st.markdown("---")
     st.markdown("### Two Best Prompts")
@@ -1173,9 +1259,9 @@ def _tab_presentation():
     st.markdown(
         "<div style='background:#E8F0EC;border-left:4px solid #315C4C;"
         "border-radius:0 5px 5px 0;padding:0.8rem 1.2rem;margin-bottom:1rem'>"
-        "<strong style='color:#315C4C'>Quick start:</strong>"
-        "<span style='color:#1F2421'> Open slides in order. "
-        "For live demo: Model Builder tab, run with defaults, then omega=2.5.</span>"
+        "<strong style='color:#315C4C'>Live demo order:</strong>"
+        "<span style='color:#1F2421'> Target Pattern -> Mechanism -> Movie Gallery "
+        "-> Phase Explorer -> (Presentation Mode as backup).</span>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -1184,55 +1270,57 @@ def _tab_presentation():
 
     slides = [
         (
-            "Slide 1 (1:00) -- Can local rules generate a living star pattern?",
-            "outputs/panels/slide1_target_and_simulation.png",
-            "1:00",
-            "Open with the biological reference image. Point to the star geometry: "
-            "shared atrium, radial arms, regular spacing. "
-            "Say: 'We asked whether local rules alone can generate this pattern. "
-            "The answer is yes, with two coupled layers.' "
-            "Show the three-panel figure: reference | GM field | agents.",
+            "Slide 1 (0:55) -- Can local rules generate a living star pattern?",
+            "outputs/panels/colony_scale_reference_match.png",
+            "0:55",
+            "Open with the real organism. Point to the star geometry: "
+            "shared atrium, radial arms, regular spacing between stars. "
+            "Left on the slide is the real colony; right is our colony-scale simulation. "
+            "Say: 'We asked whether two local rules can reproduce this geometry from scratch. "
+            "The answer is yes.' Transition: 'Let me explain the mechanism.'",
         ),
         (
-            "Slide 2 (0:50) -- Model: centers first, stars second",
-            "outputs/panels/slide2_model_schematic.png",
-            "0:50",
-            "Walk through the architecture diagram. "
-            "Layer 1: GM field places the centers via Turing instability. "
-            "Layer 2: active particles form the arms via radial spring and angular repulsion. "
-            "Point at the key equations. Two sentences per layer. Omega adds chirality.",
+            "Slide 2 (0:55) -- Model: centers first, stars second",
+            "outputs/panels/single_star_mechanism.png",
+            "0:55",
+            "Walk through both panels. "
+            "Left: GM field produces Turing spots -- those are the star centers. "
+            "No explicit center repulsion; spacing emerges from the diffusion ratio. "
+            "Right: agents form discrete arms. Angular repulsion is the key -- "
+            "without it: ring; with it: arms. Clean star left, chiral star right. "
+            "Transition: 'Here is the time evolution.'",
         ),
         (
-            "Slide 3 (1:00) -- Simulation: from noise to star systems",
+            "Slide 3 (0:55) -- Simulation: from noise to star systems",
             "outputs/panels/slide3_simulation_sequence.png",
-            "1:00",
-            "Show the time sequence: arms self-organize from initialization. "
-            "If the app is running, switch to Movie Gallery and play "
-            "star_formation_clean.gif and chiral_twist_emergence.gif. "
-            "Key point: With omega=0 the pattern is radial; "
-            "with omega=2.5 the arms rotate. Swirl score rises from 0.01 to 0.3.",
+            "0:55",
+            "Four-frame sequence. t=0: random initialization. "
+            "Final: radial lobes. Top row: omega=0 (radial). Bottom: omega=2.5 (chiral, rotating). "
+            "Swirl score rises from 0.01 to 0.3. "
+            "If app is running: Movie Gallery, play star_formation_clean.gif. "
+            "Transition: 'Now let me show you the full parameter space.'",
         ),
         (
-            "Slide 4 (1:00) -- Creative exploration: phases of living geometry",
-            "outputs/panels/slide4_phase_diagram.png",
-            "1:00",
-            "Show both heatmaps side by side. "
-            "Left: star-likeness peaks at moderate k_radial, low omega. "
-            "Right: swirl rises with chirality. "
-            "Key point: The two metrics are not correlated -- "
-            "good arms exist without chirality, and chirality up to omega=2 does not destroy arms. "
-            "Label the regimes: clean stars, twisted stars, merged stars.",
+            "Slide 4 (0:55) -- Creative exploration: phases of living geometry",
+            "outputs/panels/phase_diagram_with_regimes.png",
+            "0:55",
+            "Phase diagram: radial spring strength vs chirality rate. "
+            "Left heatmap: star-likeness. Bright at moderate k_radial, low omega. "
+            "Right heatmap: swirl. Rises with omega. "
+            "Key: the two metrics are not correlated. "
+            "Chirality up to omega=2 does not destroy arms. "
+            "Name the regimes. One run is a demo; a phase diagram is the result. "
+            "Transition: 'I want to be honest about what this model does and does not do.'",
         ),
         (
-            "Slide 5 (1:10) -- Insight, limits, and LLM use",
+            "Slide 5 (1:00) -- Insight, limits, and LLM use",
             "outputs/panels/slide5_insight_and_limits.png",
-            "1:10",
-            "Green column: what the model matches. Orange column: what it does not. "
-            "Key points: Radial geometry: yes. Arm count: approximately (detection limit at low density). "
-            "Blastogenic biology: no. "
-            "End with: The value of this model is not biological accuracy -- "
-            "it shows that spatial geometry can emerge from two coupled local rules without global coordination. "
-            "Mention LLM use: IMEX scheme and vectorized angular repulsion, both correct on first try.",
+            "1:00",
+            "Three columns. Green: center spacing, radial confinement, discrete arms, measurable chirality. "
+            "Orange: arm count is a parameter, no biochemistry, 2D only, no staging. "
+            "Blue: LLM proposed the two-layer decomposition (not our initial design) "
+            "and designed the anti-cheat metric hierarchy. Both verified. "
+            "End: Turing field + angular repulsion generates star colonial geometry from local rules.",
         ),
     ]
 
@@ -1265,15 +1353,12 @@ def _tab_presentation():
     st.markdown("---")
     st.markdown("### 2-Minute Live Demo Script")
     st.markdown(
-        "1. **Model Builder** tab. Leave defaults (N=32, 1200 field steps). "
-        "Click **Run Simulation**. (~45-90 seconds)\n"
-        "2. Point to metric cards: Radial order is 1.0. Arm count reads low -- detection limit.\n"
-        "3. Increase **omega to 2.5**. Click **Run Simulation** again.\n"
-        "4. Compare agent snapshot: Arms have rotated. Chirality is visible.\n"
-        "5. **Phase Explorer** tab. Select Sweep A. Load pregenerated. "
-        "Best stars at moderate k_radial, low omega.\n"
-        "6. **Movie Gallery** tab. Play star_formation_clean.gif. "
-        "Arms forming in real time from uniform initialization."
+        "1. **Target Pattern** tab. Show reference image and colony simulation match side by side.\n"
+        "2. **Mechanism** tab. Point to center schematic (Layer 1) and single star panel (Layer 2).\n"
+        "3. **Movie Gallery** tab. Play star_formation_clean.gif. Then chiral_twist_emergence.gif.\n"
+        "4. **Phase Explorer** tab. Pregenerated Sweep A is shown. "
+        "Point to the clean-star hotspot at moderate k_radial, low omega.\n"
+        "5. Core result: 'Turing field plus angular repulsion generates star geometry from local rules.'"
     )
 
     st.markdown("---")
@@ -1304,31 +1389,31 @@ _render_header()
 
 tabs = st.tabs([
     "Target Pattern",
-    "Model Builder",
-    "Phase Explorer",
+    "Mechanism",
     "Movie Gallery",
-    "Model Library",
+    "Phase Explorer",
     "LLM Lab Notebook",
     "Presentation Mode",
+    "Model Builder",
 ])
 
 with tabs[0]:
     _tab_target()
 
 with tabs[1]:
-    _tab_model_builder()
+    _tab_mechanism()
 
 with tabs[2]:
-    _tab_phase_explorer()
-
-with tabs[3]:
     _tab_movie_gallery()
 
-with tabs[4]:
-    _tab_model_library()
+with tabs[3]:
+    _tab_phase_explorer()
 
-with tabs[5]:
+with tabs[4]:
     _tab_llm_notebook()
 
-with tabs[6]:
+with tabs[5]:
     _tab_presentation()
+
+with tabs[6]:
+    _tab_model_builder()

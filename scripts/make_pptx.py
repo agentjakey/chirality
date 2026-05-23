@@ -13,7 +13,6 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
-from lxml import etree
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(REPO, "outputs", "slides")
@@ -31,6 +30,7 @@ LIGHT = RGBColor(0xF7, 0xF3, 0xEA)
 BORDER = RGBColor(0xDD, 0xD5, 0xC8)
 PANEL_BG = RGBColor(0xFF, 0xFF, 0xFF)
 DARK = RGBColor(0x0D, 0x11, 0x17)
+BLUE_GRAY = RGBColor(0x7A, 0xA8, 0xC8)
 
 SLIDE_W = Inches(13.33)
 SLIDE_H = Inches(7.5)
@@ -105,6 +105,7 @@ def add_slide_notes(slide, notes_text):
 
 
 def make_slide1(prs):
+    """Hook: real organism + simulation match side by side."""
     layout = prs.slide_layouts[6]
     slide = prs.slides.add_slide(layout)
     _set_bg(slide, LIGHT)
@@ -112,68 +113,95 @@ def make_slide1(prs):
                "Can local rules generate a living star pattern?",
                "Observe: star ascidian colony  |  Hypothesize: Turing field + angular repulsion  |  Result: yes")
 
-    content_top = Inches(1.08)
-    content_h = Inches(5.9)
+    content_top = Inches(1.10)
+    content_h = Inches(5.65)
 
-    # Reference image: left third
+    # Left half: real reference image (prominent)
     if os.path.exists(REF):
-        _img(slide, REF, Inches(0.2), content_top, Inches(4.1), content_h)
-        _txt(slide, "Botryllus schlosseri colony (reference)",
-             Inches(0.2), Inches(7.0), Inches(4.1), Inches(0.2),
-             size=9, color=ACCENT, align=PP_ALIGN.CENTER, italic=True)
+        _img(slide, REF, Inches(0.2), content_top, Inches(6.3), content_h)
+        _txt(slide, "Botryllus schlosseri (real colony)",
+             Inches(0.2), Inches(6.82), Inches(6.3), Inches(0.22),
+             size=10, color=ACCENT, align=PP_ALIGN.CENTER, italic=True)
 
-        # Panel: right two-thirds
-        panel = os.path.join(PANELS, "slide1_target_and_simulation.png")
-        _img(slide, panel, Inches(4.5), content_top, Inches(8.6), content_h)
-        _txt(slide,
-             "Left: real organism. Center: GM activator field (Layer 1). Right: zooid agent simulation (Layer 2).",
-             Inches(4.5), Inches(7.0), Inches(8.6), Inches(0.2),
-             size=9, color=RGBColor(0x55, 0x55, 0x55), align=PP_ALIGN.CENTER, italic=True)
-    else:
-        panel = os.path.join(PANELS, "slide1_target_and_simulation.png")
-        _img(slide, panel, Inches(0.2), content_top, Inches(12.9), content_h)
+    # Right half: colony_scale_reference_match (simulation match)
+    colony_path = os.path.join(PANELS, "colony_scale_reference_match.png")
+    _img(slide, colony_path, Inches(6.7), content_top, Inches(6.4), content_h)
+    _txt(slide, "Simulation: colony-scale view (3x3 periodic tiling)",
+         Inches(6.7), Inches(6.82), Inches(6.4), Inches(0.22),
+         size=10, color=BLUE_GRAY, align=PP_ALIGN.CENTER, italic=True)
+
+    # Three-bullet description
+    bullets = [
+        "Two-level pattern: star spacing + radial zooid geometry",
+        "Stars tile the substrate at characteristic spacing",
+        "We model the geometry, not the full organism",
+    ]
+    y = Inches(7.08)
+    for b in bullets:
+        _txt(slide, "  " + b,
+             Inches(0.2), y, Inches(13.0), Inches(0.22),
+             size=10, color=INK, align=PP_ALIGN.LEFT)
+        y += Inches(0.22)
 
     _slide_footer(slide, 1)
 
     add_slide_notes(slide,
-        "Open with the real organism. Point to the radial star structure -- shared atrium, "
-        "regular spacing, optional chirality. Say: We asked whether two local rules can "
-        "reproduce this geometry from scratch. The answer is yes. Left: real colony. "
-        "Center: GM activator field output. Right: agent simulation -- multiple star systems, "
-        "radial arms, comparable spacing. Timing: 45-60 seconds.")
+        "Open with the real organism. Point to the star structure: shared central atrium, "
+        "radial arms, regular spacing between stars. "
+        "The right panel is the simulation -- many star systems tiling the domain at comparable spacing. "
+        "Say: We asked whether two local rules can reproduce this geometry from scratch. "
+        "The answer is yes. Let me explain how. "
+        "Timing: 45-60 seconds. Transition: 'So let me walk through the mechanism.'")
 
 
 def make_slide2(prs):
+    """Mechanism: center_selection_schematic (Layer 1) + single_star_mechanism (Layer 2)."""
     layout = prs.slide_layouts[6]
     slide = prs.slides.add_slide(layout)
     _set_bg(slide, LIGHT)
     _title_bar(slide,
                "Model: centers first, stars second",
-               "Layer 1: Gierer-Meinhardt Turing field  |  Layer 2: Active zooid agents")
+               "Layer 1: Gierer-Meinhardt Turing field  |  Layer 2: Active zooid agents with angular repulsion")
 
-    panel = os.path.join(PANELS, "slide2_model_schematic.png")
-    _img(slide, panel, Inches(0.2), Inches(1.1), Inches(12.9), Inches(5.8))
+    content_top = Inches(1.10)
+    content_h = Inches(5.45)
 
-    _txt(slide,
-         "Layer 1 (GM field): Dh/Da >> 1 gives short-range activation and long-range "
-         "inhibition -> Turing spots -> star center positions, no explicit center-repulsion needed. "
-         "Layer 2 (agents): radial spring + angular repulsion between arm groups + chirality omega.",
-         Inches(0.4), Inches(7.0), Inches(12.5), Inches(0.35),
+    # Left panel: Layer 1 - center selection schematic
+    center_path = os.path.join(PANELS, "center_selection_schematic.png")
+    _img(slide, center_path, Inches(0.2), content_top, Inches(6.3), content_h)
+    _txt(slide, "Layer 1: GM activator field -> Turing spots -> star center positions",
+         Inches(0.2), Inches(6.62), Inches(6.3), Inches(0.3),
          size=10, color=INK, align=PP_ALIGN.CENTER)
+
+    # Right panel: Layer 2 - single star mechanism (clean vs chiral)
+    single_path = os.path.join(PANELS, "single_star_mechanism.png")
+    _img(slide, single_path, Inches(6.7), content_top, Inches(6.4), content_h)
+    _txt(slide, "Layer 2: radial spring + angular arm repulsion -> discrete lobes. Chirality twists.",
+         Inches(6.7), Inches(6.62), Inches(6.4), Inches(0.3),
+         size=10, color=INK, align=PP_ALIGN.CENTER)
+
+    # Key equation line
+    _txt(slide,
+         "Angular repulsion: push arm groups apart until they reach equal angular spacing. "
+         "Without it: ring. With it: discrete arms.",
+         Inches(0.3), Inches(7.05), Inches(13.0), Inches(0.35),
+         size=10, color=ACCENT, align=PP_ALIGN.CENTER, italic=True)
 
     _slide_footer(slide, 2)
 
     add_slide_notes(slide,
-        "Walk through the architecture. Layer 1: Gierer-Meinhardt. "
-        "Short-range activation, long-range inhibition. "
-        "Turing instability produces quasi-periodic spots -- these are the star centers. "
-        "No explicit center repulsion needed. Layer 2: active zooid agents. "
-        "Radial spring toward r_target. Angular repulsion between arm groups creates arms. "
-        "Without angular repulsion: ring. With it: discrete arms. Omega adds chirality. "
-        "Timing: 50 seconds.")
+        "Walk through both layers. "
+        "Left: the GM field produces quasi-periodic Turing spots. Those spots are the star centers. "
+        "No explicit repulsion between centers needed -- spacing comes from the diffusion ratio. "
+        "Right: within each star, zooid agents are confined at r_target by a radial spring. "
+        "The key ingredient is angular repulsion between arm groups. "
+        "Without it: agents form a ring. With it: they separate into discrete arms. "
+        "Clean star (left inset) vs chiral star (right inset) -- omega adds a turning bias. "
+        "Timing: 50-60 seconds. Transition: 'Here is what this looks like in motion.'")
 
 
 def make_slide3(prs):
+    """Simulation dynamics: formation sequence + clean vs chiral."""
     layout = prs.slide_layouts[6]
     slide = prs.slides.add_slide(layout)
     _set_bg(slide, LIGHT)
@@ -181,8 +209,11 @@ def make_slide3(prs):
                "Simulation: from noise to star systems",
                "400 steps. radial_order >= 0.8. swirl_score rises from 0.01 to 0.3 at omega = 2.5.")
 
-    panel = os.path.join(PANELS, "slide3_simulation_sequence.png")
-    _img(slide, panel, Inches(0.2), Inches(1.1), Inches(12.9), Inches(5.5))
+    # Main: formation sequence or slide3 panel
+    seq_path = os.path.join(PANELS, "formation_sequence_strong.png")
+    s3_path = os.path.join(PANELS, "slide3_simulation_sequence.png")
+    main_path = s3_path if os.path.exists(s3_path) else seq_path
+    _img(slide, main_path, Inches(0.2), Inches(1.12), Inches(12.9), Inches(5.35))
 
     # Key results row
     metrics = [
@@ -192,131 +223,162 @@ def make_slide3(prs):
     ]
     for i, (val, label, col) in enumerate(metrics):
         bx = Inches(0.4 + i * 4.3)
-        _rect(slide, bx, Inches(6.7), Inches(4.1), Inches(0.55), PANEL_BG, BORDER)
-        _txt(slide, val, bx + Inches(0.1), Inches(6.72), Inches(3.9), Inches(0.25),
+        _rect(slide, bx, Inches(6.55), Inches(4.1), Inches(0.55), PANEL_BG, BORDER)
+        _txt(slide, val, bx + Inches(0.1), Inches(6.57), Inches(3.9), Inches(0.25),
              size=12, bold=True, color=col, align=PP_ALIGN.LEFT)
-        _txt(slide, label, bx + Inches(0.1), Inches(6.96), Inches(3.9), Inches(0.2),
+        _txt(slide, label, bx + Inches(0.1), Inches(6.82), Inches(3.9), Inches(0.2),
              size=9, color=INK, align=PP_ALIGN.LEFT)
 
-    _txt(slide, "Live animations: outputs/movies/star_formation_clean.gif and chiral_twist_emergence.gif",
-         Inches(0.4), Inches(7.2), Inches(12.5), Inches(0.2),
+    _txt(slide, "Top row: omega = 0 (radial). Bottom row: omega = 2.5 (chiral). "
+         "Arms self-organize from noise. No global template.",
+         Inches(0.4), Inches(7.13), Inches(12.5), Inches(0.25),
          size=9, color=BORDER, italic=True, align=PP_ALIGN.CENTER)
 
     _slide_footer(slide, 3)
 
     add_slide_notes(slide,
-        "These four frames show the time evolution. At t=0 agents start in arm groups with "
-        "random offsets. Over 400 steps they settle into radial lobes. Radial spring confines "
-        "them at r_target. Angular repulsion separates arms. With omega=0: radial and static. "
-        "With omega=2.5: arms slowly rotate. Swirl score measures this: 0.01 to 0.3. "
-        "If app is running: switch to Movie Gallery and play star_formation_clean.gif. "
-        "Timing: 45-60 seconds.")
+        "These panels show the time evolution. "
+        "At t=0 agents start in arm groups with random offsets. "
+        "The radial spring drives them outward; angular repulsion pushes arms apart. "
+        "Top row: omega=0. Arms settle into radial lobes. "
+        "Bottom row: omega=2.5. Same initialization but arms slowly rotate. "
+        "Swirl score rises from 0.01 to 0.3. The arm structure is preserved. "
+        "If the app is running: Movie Gallery tab, play star_formation_clean.gif. "
+        "Timing: 50-60 seconds. Transition: 'Let me show you the parameter space.'")
 
 
 def make_slide4(prs):
+    """Phase diagram with regime labels."""
     layout = prs.slide_layouts[6]
     slide = prs.slides.add_slide(layout)
     _set_bg(slide, LIGHT)
     _title_bar(slide,
                "Creative exploration: phases of living geometry",
-               "4 sweeps. 6 named regimes. star-likeness and swirl_score are independent.")
+               "4 sweeps. Named regimes. star-likeness and swirl are independent axes.")
 
-    panel = os.path.join(PANELS, "slide4_phase_diagram.png")
-    _img(slide, panel, Inches(0.2), Inches(1.1), Inches(12.9), Inches(5.3))
+    panel = os.path.join(PANELS, "phase_diagram_with_regimes.png")
+    _img(slide, panel, Inches(0.2), Inches(1.10), Inches(12.9), Inches(5.3))
 
     regimes = [
-        "Uniform mat: low Dh/Da",
-        "Clean stars: moderate k_r, low omega",
-        "Twisted stars: high omega",
-        "Merged: overcrowded",
-        "Fragmented: high Dr",
-        "Spots, no arms: low k_r",
+        ("Uniform mat", "low Dh/Da, no Turing spots", INK),
+        ("Clean stars", "moderate k_r, low omega (best)", GREEN),
+        ("Twisted stars", "moderate k_r, high omega", ACCENT),
+        ("Merged", "overcrowded, too many agents", ACCENT),
+        ("Fragmented", "high Dr, noise breaks arms", ACCENT),
+        ("Spots, no arms", "k_r too low for arm confinement", INK),
     ]
-    for i, label in enumerate(regimes):
+    for i, (regime, desc, col) in enumerate(regimes):
         col_i = i % 3
         row_i = i // 3
-        _txt(slide, label,
-             Inches(0.4 + col_i * 4.3), Inches(6.5 + row_i * 0.38),
-             Inches(4.1), Inches(0.35),
-             size=10, color=INK if row_i == 0 else ACCENT,
-             align=PP_ALIGN.LEFT)
+        x = Inches(0.4 + col_i * 4.3)
+        y = Inches(6.52 + row_i * 0.38)
+        _txt(slide, f"{regime}: {desc}",
+             x, y, Inches(4.1), Inches(0.35),
+             size=10, color=col, align=PP_ALIGN.LEFT,
+             bold=(regime in ("Clean stars",)))
 
     _slide_footer(slide, 4)
 
     add_slide_notes(slide,
-        "Phase diagram for radial spring strength vs chirality rate. "
-        "Left: star-likeness. Bright at moderate k_radial, low omega -- the clean star regime. "
-        "Right: swirl rises with omega, roughly independent of k_radial up to a threshold. "
-        "Key point: the two metrics are not correlated -- good arms exist without chirality, "
-        "and chirality up to omega=2 does not destroy arms. "
-        "Label the regimes on the left heatmap: uniform mat (bottom), clean stars (middle-left), "
-        "twisted stars (top-right). Timing: 50-60 seconds.")
+        "Phase diagram for radial spring strength versus chirality rate. "
+        "Left heatmap: star-likeness. Bright at moderate k_radial, low omega -- the clean star regime. "
+        "Right heatmap: swirl score rises with omega, roughly independent of k_radial up to a threshold. "
+        "Key point: the two metrics are not correlated. "
+        "Good arms exist without chirality. Chirality up to omega=2 does not destroy arms. "
+        "Inset thumbnails show representative presets from actual simulations. "
+        "Timing: 50-60 seconds. Transition: 'I want to be honest about what this model does and does not do.'")
 
 
 def make_slide5(prs):
+    """Insight, limits, and LLM use in three clean columns."""
     layout = prs.slide_layouts[6]
     slide = prs.slides.add_slide(layout)
     _set_bg(slide, LIGHT)
     _title_bar(slide,
                "Insight, limits, and LLM use",
-               "Local rules can make living geometry. This is a toy geometric model, not a full developmental model.")
+               "Local rules can make living geometry. Toy geometric model, not a full developmental model.")
 
-    # Left: slide5 panel
-    panel = os.path.join(PANELS, "slide5_insight_and_limits.png")
-    _img(slide, panel, Inches(0.2), Inches(1.1), Inches(6.8), Inches(5.2))
+    col_w = Inches(4.1)
+    col_h = Inches(5.1)
+    tops = Inches(1.12)
+    gaps = [Inches(0.2), Inches(4.5), Inches(8.8)]
 
-    # Right: LLM contributions
-    _rect(slide, Inches(7.2), Inches(1.1), Inches(5.9), Inches(5.2), PANEL_BG, BORDER)
-
-    llm_lines = [
-        ("LLM contributions", 13, True, GREEN),
-        ("", 6, False, INK),
-        ("1. Proposed two-layer decomposition:", 11, True, INK),
-        ("   Center placement = Turing field.", 10, False, INK),
-        ("   Arm formation = angular repulsion.", 10, False, INK),
-        ("   Not our initial design. Verified by", 10, False, INK),
-        ("   running single-layer vs two-layer.", 10, False, INK),
-        ("", 6, False, INK),
-        ("2. Designed anti-cheat metric hierarchy:", 11, True, INK),
-        ("   radial_order, arm_count, swirl_score,", 10, False, INK),
-        ("   fragmentation. Each catches a specific", 10, False, INK),
-        ("   failure mode that passes visual check.", 10, False, INK),
-        ("", 6, False, INK),
-        ("3. IMEX solver + vectorized repulsion:", 11, True, INK),
-        ("   both correct on first try.", 10, False, INK),
-        ("", 6, False, INK),
-        ("Human decisions: equations, parameters,", 10, False, ACCENT),
-        ("biological scope, all verification.", 10, False, ACCENT),
+    # Column 1: What matched
+    _rect(slide, gaps[0], tops, col_w, col_h, RGBColor(0xE8, 0xF5, 0xEC), GREEN)
+    _txt(slide, "What matched", gaps[0] + Inches(0.15), tops + Inches(0.1), col_w - Inches(0.3), Inches(0.3),
+         size=13, bold=True, color=GREEN)
+    matched = [
+        "Repeated center spacing",
+        "Radial arm confinement",
+        "Discrete arm structure",
+        "Measurable chirality (swirl)",
+        "Star-like colony tiling",
     ]
+    y = tops + Inches(0.5)
+    for item in matched:
+        _txt(slide, "+ " + item, gaps[0] + Inches(0.15), y, col_w - Inches(0.3), Inches(0.32),
+             size=11, color=INK)
+        y += Inches(0.38)
 
-    y = Inches(1.2)
-    for text, size, bold, color in llm_lines:
-        _txt(slide, text, Inches(7.35), y, Inches(5.6), Inches(0.3),
-             size=size, bold=bold, color=color, align=PP_ALIGN.LEFT)
-        y += Inches(size * 0.018)
+    # Column 2: What did not
+    _rect(slide, gaps[1], tops, col_w, col_h, RGBColor(0xFB, 0xF0, 0xEC), ACCENT)
+    _txt(slide, "What did not", gaps[1] + Inches(0.15), tops + Inches(0.1), col_w - Inches(0.3), Inches(0.3),
+         size=13, bold=True, color=ACCENT)
+    limits = [
+        "n_arms = 7 is a parameter",
+        "No Botryllus biochemistry",
+        "No 3D geometry",
+        "No developmental staging",
+        "Arm count metric underestimates",
+    ]
+    y = tops + Inches(0.5)
+    for item in limits:
+        _txt(slide, "- " + item, gaps[1] + Inches(0.15), y, col_w - Inches(0.3), Inches(0.32),
+             size=11, color=INK)
+        y += Inches(0.38)
 
-    # Takeaway box
-    _rect(slide, Inches(0.2), Inches(6.5), Inches(12.9), Inches(0.7),
-          RGBColor(0xE8, 0xF0, 0xEC), RGBColor(0x31, 0x5C, 0x4C))
+    # Column 3: LLM contributions
+    _rect(slide, gaps[2], tops, col_w, col_h, RGBColor(0xEA, 0xF0, 0xF7), BLUE_GRAY)
+    _txt(slide, "LLM contribution", gaps[2] + Inches(0.15), tops + Inches(0.1), col_w - Inches(0.3), Inches(0.3),
+         size=13, bold=True, color=BLUE_GRAY)
+    llm_items = [
+        "Proposed two-layer split:",
+        "  Turing field for centers,",
+        "  agents for arms",
+        "Designed anti-cheat metrics:",
+        "  radial_order, swirl_score,",
+        "  fragmentation",
+        "Both verified, not accepted blindly",
+    ]
+    y = tops + Inches(0.5)
+    for item in llm_items:
+        _txt(slide, item, gaps[2] + Inches(0.15), y, col_w - Inches(0.3), Inches(0.32),
+             size=10, color=INK)
+        y += Inches(0.35)
+
+    # Takeaway bar
+    _rect(slide, Inches(0.2), Inches(6.35), Inches(12.9), Inches(0.75),
+          RGBColor(0x1F, 0x24, 0x21))
     _txt(slide,
          "Takeaway: A Turing field plus angular repulsion is sufficient to generate "
          "star-shaped colonial geometry from local rules. Chirality is measurable. "
-         "The model does not reproduce Botryllus developmental biology, and we say so.",
-         Inches(0.4), Inches(6.58), Inches(12.5), Inches(0.55),
-         size=12, bold=False, color=INK, align=PP_ALIGN.CENTER)
+         "This is a geometric model, not a biological one, and we say so.",
+         Inches(0.5), Inches(6.45), Inches(12.4), Inches(0.55),
+         size=12, bold=False, color=LIGHT, align=PP_ALIGN.CENTER)
 
     _slide_footer(slide, 5)
 
     add_slide_notes(slide,
-        "Green: what the model matches -- center spacing, radial confinement, "
-        "discrete arm structure, measurable chirality. "
-        "Orange: what it does not -- arm count is a parameter not emergent, "
-        "no Botryllus biochemistry, no 3D, no blastogenic staging. "
-        "LLM used for two critical decisions: proposing the two-layer architecture "
-        "(not our initial design), and designing the anti-cheat metric hierarchy. "
+        "Three columns: what matched, what did not, what LLM changed. "
+        "Green: center spacing, radial confinement, discrete arms, measurable chirality. "
+        "Orange: arm count is a parameter not emergent, no biochemistry, 2D only, no staging. "
+        "Blue: LLM proposed the two-layer decomposition -- that was not the initial design. "
+        "We started with a single-layer model. LLM suggested separating Turing-based center selection "
+        "from local agent arm formation. That separation is physically principled. "
+        "LLM also designed the metric hierarchy -- each metric catches a specific failure mode. "
         "Both were verified, not accepted blindly. "
-        "End: Turing instability plus angular repulsion is sufficient to generate "
-        "star-shaped colonial geometry from local rules. Clean result. Timing: 60-70 seconds.")
+        "End: Turing instability plus angular repulsion generates star colonial geometry from local rules. "
+        "Timing: 60-70 seconds.")
 
 
 def main():
@@ -340,6 +402,20 @@ def main():
     size_kb = os.path.getsize(PPTX_PATH) // 1024
     print(f"\nSaved: {PPTX_PATH}")
     print(f"Size:  {size_kb} KB")
+    print()
+    print("Slides use these assets:")
+    for fname, desc in [
+        ("assets/reference/star_ascidian_reference.jpg", "Slide 1 left"),
+        ("outputs/panels/colony_scale_reference_match.png", "Slide 1 right"),
+        ("outputs/panels/center_selection_schematic.png", "Slide 2 left"),
+        ("outputs/panels/single_star_mechanism.png", "Slide 2 right"),
+        ("outputs/panels/slide3_simulation_sequence.png", "Slide 3 main"),
+        ("outputs/panels/phase_diagram_with_regimes.png", "Slide 4 main"),
+        ("outputs/panels/slide5_insight_and_limits.png", "Slide 5 (unused, replaced by 3-column layout)"),
+    ]:
+        path = os.path.join(REPO, fname)
+        exists = "OK" if os.path.exists(path) else "MISSING"
+        print(f"  [{exists}] {desc}: {fname}")
 
 
 if __name__ == "__main__":

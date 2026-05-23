@@ -1,105 +1,147 @@
 # Final Slide Speaker Notes
 
-## Slide 1 (1:00) -- Can local rules generate a living star pattern?
-
-"This is Botryllus schlosseri. A colonial tunicate that tiles hard substrates
-as a mat of star-shaped systems. Each star has 5-10 zooids arranged radially
-around a shared atrium.
-
-We asked: can two local rules reproduce this geometry? The answer is yes.
-A Turing field places the centers. Active agents form the arms. That is it.
-
-The three panels show: the biological target, the activator field, and the
-agent simulation at the same scale."
-
-Timing: 45-60 seconds. Point at each panel.
+5 slides, 5 minutes. Each slide is 45-60 seconds.
+These are anchor points, not a script to read verbatim.
 
 ---
 
-## Slide 2 (0:50) -- Model: centers first, stars second
+## Slide 1 (0:55): Can local rules generate a living star pattern?
 
-"Layer 1: Gierer-Meinhardt. Short-range activation, long-range inhibition.
-Turing instability produces quasi-periodic spots -- these are the star centers.
-The Dh/Da ratio controls how many centers appear.
+**Visual:** Real Botryllus schlosseri colony (left) + simulation colony scale (right)
 
-Layer 2: Active zooid agents. Each agent has a radial spring toward r_target,
-and angular repulsion from neighboring arm groups. Omega adds a turning bias.
+Open by pointing to the reference image.
 
-No global template. Everything is local."
+"This is Botryllus schlosseri, a colonial tunicate that tiles hard substrates
+as a mat of star-shaped systems. Each star has roughly seven zooids arranged
+radially around a shared central atrium. Stars maintain characteristic spacing
+and do not merge under normal conditions.
 
-Timing: 50 seconds. Point at the equation boxes. Two sentences per layer.
+Notice two things: the spacing between stars, and the radial structure inside each star.
+Those are two distinct levels of spatial organization.
 
----
+We asked whether two local rules can reproduce both of them.
 
-## Slide 3 (1:00) -- Simulation: from noise to star systems
+The right panel is our simulation. Many star systems. Radial arms. Comparable spacing.
+The answer is yes."
 
-"Arms self-organize from noise in about 400 steps. At t=0, agents are in
-initialized arm groups with random offsets. By the final frame they have
-settled into radial lobes.
-
-With omega=0: the pattern is radial. With omega=2.5: the arms rotate.
-Swirl score rises from 0.01 to 0.3 -- a measurable chirality signature.
-
-[If app is running: switch to Movie Gallery, play star_formation_clean.gif]"
-
-Timing: 45-60 seconds. If time: play the GIF from Movie Gallery.
+Transition: "Let me explain how the mechanism works."
 
 ---
 
-## Slide 4 (1:00) -- Creative exploration: phases of living geometry
+## Slide 2 (0:55): Model -- centers first, stars second
 
-"This is the phase diagram for radial attraction versus chirality.
+**Visual:** Layer 1 center selection schematic (left) + single star mechanism (right)
 
-Left: star-likeness. The bright region at moderate k_radial, low omega is the
-clean star regime. At high chirality, persistent rotation smears the arms.
+Walk through both panels from left to right.
 
-Right: swirl. Rises with omega without destroying arm structure up to omega~2.
-The two metrics are not correlated -- you can have good arms without chirality,
-and chirality without arm degradation.
+"We built a two-layer model to match the two biological scales.
 
-The regimes from left to right: uniform mat, spots without stars, clean stars,
-twisted stars."
+Left panel -- Layer 1. This is a Gierer-Meinhardt reaction-diffusion field.
+Short-range activation, long-range inhibition. When the inhibitor diffuses
+much faster than the activator, the system spontaneously breaks into Turing spots.
+Those spots become the star center positions. No explicit repulsion between centers is needed.
+Spacing emerges from the diffusion ratio alone.
 
-Timing: 50-60 seconds. Point at each regime on the left heatmap.
+Right panel -- Layer 2. Active zooid agents. Each agent has a radial spring toward r target,
+angular repulsion from neighboring arm groups, rotational noise, and chirality omega.
 
----
+The angular repulsion is the key ingredient.
+Without it: agents form a ring. With it: discrete arms.
+Clean star on the left inset. Chiral star on the right -- arms have rotated."
 
-## Slide 5 (1:10) -- Insight, limits, and LLM use
-
-"What works: center spacing from the Turing field, radial confinement at r_target,
-discrete arm lobes from angular repulsion, measurable chirality rotation.
-
-What does not: arm count is a parameter not emergent. No Botryllus biochemistry,
-no 3D, no blastogenic timing, no immune recognition.
-
-LLM contributions: the IMEX Gierer-Meinhardt solver, the vectorized angular
-repulsion, and diagnosing a broadcast error in the swirl metric during testing.
-All equation choices and parameter values were human decisions.
-
-The core insight: Turing instability plus angular repulsion is sufficient
-to generate star-shaped colonial geometry from local rules, without any
-organism-specific information."
-
-Timing: 60-70 seconds. End on the core insight sentence.
+Transition: "Here is the time evolution."
 
 ---
 
-## If asked about arm count reading 1.25
+## Slide 3 (0:55): Simulation -- from noise to star systems
 
-"That is the detection limit of find_peaks at 3 agents per arm. The angular
-histogram has 3 points per arm out of 36 bins. The peak detection algorithm
-needs at least 5 agents per arm to reliably detect peaks. The visual output
-shows 7 arms. The metric is the limitation, not the model."
+**Visual:** 4-frame time sequence, top row clean, bottom row chiral
 
-## If asked about phase boundary precision
+Point to the four frames from left to right.
 
-"The phase diagram uses a 5x5 grid at reduced resolution for speed.
-Each point takes about 15 seconds. The qualitative trends are robust.
-Phase boundaries would shift by approximately one grid cell at higher resolution."
+"At t equals zero, agents are initialized in arm groups with random offsets.
+Over 400 steps they settle into radial lobes.
+The radial spring confines them at r target. Angular repulsion pushes arms apart.
 
-## If asked about biological validation
+Top row is omega zero -- radial and stable.
+Bottom row is omega 2.5 -- arms slowly rotate.
 
-"This model does not claim to reproduce Botryllus biochemistry. The claim
-is specifically about spatial geometry: center spacing and radial arm structure
-can emerge from a Turing field plus active agent forces. That claim is supported
-by the simulation outputs and the radial_order metric."
+We quantify chirality with a swirl score: net tangential velocity normalized by total speed.
+It rises from about 0.01 at omega zero to about 0.3 at omega 2.5.
+The arm structure is preserved under chirality up to a threshold."
+
+If app is running: switch to Movie Gallery and show star_formation_clean.gif.
+
+Transition: "Now let me show you the full parameter space."
+
+---
+
+## Slide 4 (0:55): Creative exploration -- phases of living geometry
+
+**Visual:** Phase diagram with two heatmaps and regime labels
+
+Point to the left heatmap first, then right.
+
+"Phase diagram: radial spring strength versus chirality rate.
+
+Left: star-likeness. Brighter means more star-like.
+Hotspot at moderate k radial, low omega -- this is the clean star regime.
+
+Right: swirl score. Rises with omega, mostly independent of k radial.
+
+The key finding: the two metrics are not correlated.
+You can tune chirality without destroying arm structure up to about omega two.
+
+The regime labels correspond to what you actually see:
+uniform mat at low inhibition ratio, spots without arms at low k radial,
+clean stars in the center, twisted stars at high omega,
+merged stars when overcrowded, fragmented stars at high noise.
+
+Each regime was verified in a full-resolution simulation.
+One run is a demo. A phase diagram is the result."
+
+Transition: "I want to be honest about what this model does and does not do."
+
+---
+
+## Slide 5 (1:00): Insight, limits, and LLM use
+
+**Visual:** Three columns -- what matched, what did not, what LLM changed
+
+Read column by column, briefly.
+
+"Green column: what the model matches.
+Center spacing, radial confinement, discrete arm structure, measurable chirality.
+Radial order stays above 0.8 at default parameters.
+
+Orange column: what it does not.
+Arm count is a parameter we set, not emergent.
+No Botryllus biochemistry, no developmental staging, no 3D geometry.
+This is a geometric model, and we say so.
+
+Blue column: what LLM changed.
+Claude proposed the two-layer decomposition. That was not our initial idea.
+We started with a single-layer model. The suggestion to separate center selection
+using a Turing field from arm formation using active agents was physically principled
+and biologically motivated. It worked better than the original approach.
+
+Claude also designed the metric hierarchy. Each metric catches a specific failure mode
+that looks fine on visual inspection alone. Both contributions were verified, not accepted.
+
+Takeaway: a Turing field and angular repulsion are sufficient to generate
+star-shaped colonial geometry from local rules. Clean result. Honest scope."
+
+End with the takeaway bar text.
+
+---
+
+## Timing guide
+
+| Slide | Target | Transition line |
+|-------|--------|----------------|
+| 1 | 0:55 | "Let me explain how the mechanism works." |
+| 2 | 0:55 | "Here is the time evolution." |
+| 3 | 0:55 | "Now let me show you the full parameter space." |
+| 4 | 0:55 | "I want to be honest about what this model does and does not do." |
+| 5 | 1:00 | Takeaway line. Done. |
+| Buffer | 0:20 | Questions setup |

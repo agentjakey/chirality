@@ -1,6 +1,6 @@
 # Final 2-Minute Live Demo Script
 
-Demo order: Target Pattern -> Movie Gallery -> Phase Explorer -> LLM Lab Notebook -> Presentation Mode
+Demo order: Target Pattern -> Mechanism -> Movie Gallery -> Phase Explorer -> Presentation Mode (backup)
 
 ---
 
@@ -8,91 +8,80 @@ Demo order: Target Pattern -> Movie Gallery -> Phase Explorer -> LLM Lab Noteboo
 
 Open the app. Tab 1 is already showing.
 
-Say: "This is the real organism -- Botryllus schlosseri. You can see the radial star systems.
-The feature checklist on the right shows what the model reproduces and what it does not."
+Point to the reference image on the left.
+Say: "This is Botryllus schlosseri -- a real star ascidian colony.
+Each star has radial zooids arranged around a shared atrium.
+The right panel shows our simulation match at colony scale."
 
-Point to the reference image.
-Point to the checklist: green items are reproduced, red items are acknowledged limitations.
+Point to the colony simulation panel.
+Point to the notice box: "Two-level pattern: star spacing and internal radial geometry."
 
 ---
 
-## Step 2 (30 sec): Movie Gallery tab
+## Step 2 (25 sec): Mechanism tab
 
-Click Movie Gallery (Tab 4).
+Click Mechanism (Tab 2).
+
+Point to the left panel (center selection schematic):
+"Layer 1: the GM field produces Turing spots -- those become star center positions.
+No explicit center repulsion. Spacing emerges from the diffusion ratio."
+
+Point to the right panel (single star mechanism):
+"Layer 2: zooid agents form discrete arms through radial confinement and angular repulsion.
+Clean star left, chiral star right -- same initialization, omega equals 2.5 adds the twist."
+
+---
+
+## Step 3 (30 sec): Movie Gallery tab
+
+Click Movie Gallery (Tab 3).
 
 Point to the first GIF (star_formation_clean.gif):
-"Here are the arms forming in real time from a random initialization.
-No template. Radial spring drives them outward, angular repulsion separates them."
+"Arms self-organizing from random initialization.
+Radial spring drives them outward; angular repulsion separates them.
+No global template. Local rules only."
 
 Wait a moment for the GIF to cycle.
 
 Point to the second GIF (chiral_twist_emergence.gif):
-"Same initialization, but with a chirality parameter omega=2.5.
-The arms rotate. That is the biological chirality signature."
+"Same initialization, but with chirality omega equals 2.5.
+The arms rotate. Swirl score rises from 0.01 to 0.3."
 
 ---
 
-## Step 3 (20 sec): Phase Explorer tab
+## Step 4 (20 sec): Phase Explorer tab
 
-Click Phase Explorer (Tab 3).
+Click Phase Explorer (Tab 4).
 
-Select "Sweep A -- Radial attraction vs chirality."
-Click "Load pregenerated."
+Phase diagram is already shown (pregenerated Sweep A).
 
 Point to the heatmap:
-"Best star-likeness is at moderate k_radial, low omega -- the top-left region.
+"Best star-likeness at moderate k radial, low omega -- clean star regime in the center left.
 High chirality degrades arm structure at the right edge.
-The two metrics are not correlated."
+The two metrics are independent."
 
 ---
 
-## Step 4 (20 sec): LLM Lab Notebook tab
+## Step 5 (5 sec): Presentation Mode tab (backup only)
 
-Click LLM Lab Notebook (Tab 6).
+Click Presentation Mode (Tab 6) if time permits.
 
-Point to "Two Best Prompts."
-Say: "This shows how Claude was actually used -- specific prompts, specific outcomes.
-Not vibe coding. Every function was verified with at least three checks."
-
-Point to the failure gallery:
-"This is where it went wrong. Broadcast error in the swirl metric. Caught before any
-figure was produced, because every function was tested against expected behavior."
+Say: "Full 5-slide deck with speaker notes. Slide 5 has the honest limits and LLM summary."
 
 ---
 
-## Step 5 (20 sec): Model Builder tab (optional, if time)
+## Cut-down to 90 seconds
 
-Click Model Builder (Tab 2).
-
-Say: "You can run a simulation live. Leave defaults -- N=32, 1200 field steps -- and click
-Run Simulation. Takes 45-90 seconds. Radial order near 1.0 is the quality signal.
-Arm count reads low due to the detection limit at 3 agents per arm -- we say so in the tooltip."
-
-[Do not wait for the run during a 2-minute demo. Just show the controls.]
-
----
-
-## Step 6 (10 sec): Presentation Mode tab
-
-Click Presentation Mode (Tab 7).
-
-Say: "This is the full 5-slide deck order with exact speaker notes.
-Slide 5 has the honest limitations and the LLM contribution summary."
-
----
-
-## Cut-down order if under 90 seconds
-
-1. Target Pattern tab (10 sec): show reference image
-2. Movie Gallery tab (20 sec): play star_formation_clean.gif, point to chirality
-3. Phase Explorer tab (10 sec): load pregenerated Sweep A
-4. Say the core result: "Turing field plus angular repulsion generates star colonial geometry from local rules."
+1. Target Pattern (10 sec): show reference + simulation match
+2. Mechanism (15 sec): point to center schematic and single star panels
+3. Movie Gallery (30 sec): play star_formation_clean.gif and chiral_twist_emergence.gif
+4. Say the result: "Turing field plus angular repulsion generates star geometry from local rules."
 
 ---
 
 ## Core result to say in any context
 
-"A Turing activator-inhibitor field places star centers at regular spacing.
-Active agents with angular repulsion form discrete arms around those centers.
-Chirality measurably rotates the arms. Swirl score distinguishes chiral from radial.
+"Layer 1: a Turing activator-inhibitor field places star centers at regular spacing.
+Layer 2: active agents with angular repulsion form discrete arms around those centers.
+Chirality measurably rotates the arms.
 All from local rules, no global template, no organism-specific biochemistry."
