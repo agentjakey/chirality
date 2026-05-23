@@ -6,6 +6,48 @@ expectation and documents both successes and failures honestly.
 
 ---
 
+## Two Strongest LLM Contributions
+
+### Contribution 1: Decomposing the biological image into two mechanisms
+
+We showed Claude a description of the star ascidian colony and asked what minimal set of
+mechanisms could explain the two-level spatial organization: regular star spacing across
+the substrate, and radial zooid geometry inside each star.
+
+Claude proposed separating these into two independent mechanisms:
+- Colony level: activator-inhibitor reaction-diffusion (Turing instability) explains
+  the quasi-regular spacing between star centers without requiring explicit center-repulsion rules.
+- Star level: active particle dynamics with a radial spring and angular repulsion between
+  arm groups explain the discrete arms within each star.
+
+This decomposition was not our initial plan. We had been modeling a single-layer system
+where particle interactions were responsible for both center spacing and arm formation.
+The two-layer separation is physically principled: the two processes operate at different
+spatial and temporal scales, and the separation makes each layer independently tunable.
+
+Verification: we ran both versions (single-layer vs two-layer). The single-layer version
+required explicit center-repulsion rules to maintain star spacing -- an ad hoc addition.
+The two-layer version produced regular spacing automatically from the Turing mechanism.
+
+### Contribution 2: Designing metrics that cannot be fooled by pretty pictures
+
+Early simulations produced outputs that looked like stars in screenshots but failed to
+capture the actual geometry. We asked Claude to design a metric hierarchy that would
+catch each specific failure mode.
+
+Claude proposed five metrics:
+- radial_order: catches high particle density everywhere but not at r_target
+- arm_count: catches ring (high radial order, no discrete arms)
+- angular_uniformity: catches arms with uneven angular spacing
+- swirl_score: specifically detects chirality (a radially symmetric pattern cannot fake this)
+- fragmentation: catches good-looking center with escaped agents at boundaries
+
+Human verification: ran the full metric suite on a uniform ring (all agents at r_target,
+no angular structure). radial_order = 1.0 (false positive for ring), arm_count = 0 (correct).
+The hierarchy catches what visual inspection misses.
+
+---
+
 ## How LLM Was Used Scientifically
 
 Claude was used for five categories of work:

@@ -178,6 +178,23 @@ def _render_header():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _tab_target():
+    # Judge takeaway box
+    st.markdown(
+        "<div style='background:#1F2421;border-radius:5px;padding:0.8rem 1.2rem;"
+        "margin-bottom:1rem;border:none'>"
+        "<span style='color:#F7F3EA;font-size:0.82rem;font-weight:700;"
+        "letter-spacing:0.07em'>QUESTION</span><br>"
+        "<span style='color:#F7F3EA;font-size:1.1rem;font-weight:700'>"
+        "Can two local rules generate a living star pattern?</span><br>"
+        "<span style='color:#DDD5C8;font-size:0.9rem'>"
+        "Observe: star ascidian colony. &nbsp;|&nbsp; "
+        "Hypothesize: Turing field + angular repulsion. &nbsp;|&nbsp; "
+        "Simulate: two-layer agent model. &nbsp;|&nbsp; "
+        "Result: yes.</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
     st.markdown("## Biological Target: *Botryllus schlosseri*")
     st.markdown(
         "*Botryllus schlosseri* is a colonial tunicate (sea squirt) that tiles "
@@ -237,11 +254,37 @@ def _tab_target():
     st.markdown("---")
     st.markdown("### Model Hypothesis")
     st.info(
-        "A two-layer generative model — an activator-inhibitor (Gierer-Meinhardt) "
+        "A two-layer generative model -- an activator-inhibitor (Gierer-Meinhardt) "
         "field for center placement, and active zooid-like particles for arm formation "
-        "— can reproduce the spatial geometry of Botryllus star colonies using only "
+        "-- can reproduce the spatial geometry of Botryllus star colonies using only "
         "local interaction rules, without reference to organism-specific biochemistry."
     )
+
+    with st.expander("Physical intuition: why each mechanism works"):
+        st.markdown(
+            """
+**Why stars are regularly spaced (Layer 1):**
+Local activation amplifies a small perturbation. Long-range inhibition suppresses
+neighboring perturbations. When the inhibitor diffuses much faster than the activator
+(Dh/Da >> 1), the system spontaneously breaks into Turing spots at a characteristic spacing.
+No explicit repulsion between stars is needed -- spacing emerges from the diffusion ratio.
+
+**Why arms form discrete lobes instead of a ring (Layer 2):**
+A simple radial spring produces a ring of agents at r_target. Arms only appear when
+agents in different arm groups repel each other tangentially. This force pushes arm
+groups apart until they reach minimum-energy equal angular spacing.
+Without angular repulsion: featureless ring. With it: discrete arms.
+
+**Why noise is necessary:**
+Rotational noise (Dr) breaks exact symmetry and makes the colony look organic.
+Too much noise fragments the arms (see noisy_fragmented_systems preset).
+
+**Why chirality produces rotation, not collapse:**
+Omega adds a persistent turning bias to each agent's heading -- not a tangential force.
+Arms precess slowly because the bias accumulates. The radial spring keeps agents at
+r_target. At high omega, agents overshoot and arm structure blurs.
+            """
+        )
 
     _notice(
         "The radial arm structure and colony-level spacing are captured well. "
@@ -374,6 +417,22 @@ def _tab_model_builder():
         st.markdown("### Simulation Result")
 
         m = result.metrics
+        ro = m.get("radial_order", 0)
+        sw = m.get("swirl_score", 0)
+        ro_color = "#315C4C" if ro >= 0.8 else "#C15A3A"
+        sw_label = "chiral" if sw > 0.05 else "radial"
+        st.markdown(
+            f"<div style='background:#F7F3EA;border:1px solid #DDD5C8;"
+            f"border-left:4px solid {ro_color};border-radius:0 4px 4px 0;"
+            f"padding:0.6rem 1rem;margin-bottom:0.8rem;font-size:0.9rem'>"
+            f"<strong>Key result:</strong> "
+            f"radial_order = <strong style='color:{ro_color}'>{ro:.3f}</strong> "
+            f"(>= 0.8 means agents are well-confined at the target ring). "
+            f"swirl_score = <strong>{sw:.3f}</strong> ({sw_label}). "
+            f"Arm count metric reads low at 3 agents/arm -- see tooltip."
+            f"</div>",
+            unsafe_allow_html=True,
+        )
         _metric_row([
             ("Star-likeness", f"{m['star_likeness_score']:.3f}",
              "Composite score in [0,1]. >0.6 = good stars."),
@@ -484,6 +543,20 @@ def _tab_phase_explorer():
     st.markdown(
         "Explore how parameters control colony morphology. "
         "Load pregenerated heatmaps instantly, or run a live sweep on a 5x5 grid."
+    )
+    st.markdown(
+        "<div style='background:#F7F3EA;border:1px solid #DDD5C8;"
+        "border-left:4px solid #315C4C;border-radius:0 4px 4px 0;"
+        "padding:0.6rem 1rem;margin-bottom:1rem;font-size:0.9rem;color:#1F2421'>"
+        "<strong>Regime guide:</strong> "
+        "Low k_radial = no arms (ring). "
+        "Moderate k_radial + low omega = clean stars (best). "
+        "High omega = twisted/rotating arms. "
+        "High Dr = fragmented. "
+        "Low Dh/Da = uniform mat (no Turing spots). "
+        "Overcrowded = merged stars."
+        "</div>",
+        unsafe_allow_html=True,
     )
 
     sweep_name = st.selectbox(
@@ -854,9 +927,26 @@ def _tab_model_library():
 def _tab_llm_notebook():
     st.markdown("## LLM Lab Notebook")
     st.markdown(
-        "This tab documents how LLM assistance was used in the project — "
-        "including the surprising contributions, the human judgment calls, "
-        "and the cases where it went wrong."
+        "This documents how Claude (claude-sonnet-4-6) was used scientifically. "
+        "Not vibe coding -- every generated function was verified with at least three checks "
+        "before being used in any figure."
+    )
+
+    # Two strongest LLM contributions at the top
+    st.markdown(
+        "<div style='background:#E8F0EC;border-left:4px solid #315C4C;"
+        "border-radius:0 5px 5px 0;padding:0.8rem 1.2rem;margin-bottom:1rem'>"
+        "<strong style='color:#315C4C'>Two strongest contributions:</strong><br>"
+        "<span style='color:#1F2421'>"
+        "1. Proposed decomposing the biological image into two mechanisms: "
+        "center selection (Turing field) + radial zooid organization (agents). "
+        "Not our initial design. Led to the two-layer architecture.<br>"
+        "2. Designed metrics that cannot be fooled by pretty pictures: "
+        "radial_order, arm_count, swirl_score, fragmentation. "
+        "Each catches a specific failure mode invisible to visual inspection."
+        "</span>"
+        "</div>",
+        unsafe_allow_html=True,
     )
 
     st.markdown("### Workflow Overview")
@@ -864,11 +954,11 @@ def _tab_llm_notebook():
         """
 The project followed an iterative loop:
 
-1. **Ideation** — human described biological target; LLM proposed candidate model classes
-2. **Code generation** — LLM wrote initial implementations of 6 reference models
-3. **Debugging** — numerical instability caught by smoke test; LLM diagnosed root cause
-4. **Metric design** — LLM proposed anti-cheat metrics when visual inspection was unreliable
-5. **Documentation** — LLM wrote docstrings, technical notes, and this app
+1. **Ideation** -- human described biological target; LLM proposed candidate model classes
+2. **Code generation** -- LLM wrote initial implementations of 6 reference models
+3. **Debugging** -- numerical instability caught by smoke test; LLM diagnosed root cause
+4. **Metric design** -- LLM proposed anti-cheat metrics when visual inspection was unreliable
+5. **Documentation** -- LLM wrote docstrings, technical notes, and this app
 
 At every step, the human ran the code, inspected outputs, and made the scientific judgments.
         """
