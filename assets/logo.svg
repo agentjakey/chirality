@@ -1,16 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44">
-  <defs>
-    <marker id="arw" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
-      <path d="M 0,0.5 L 6,3.5 L 0,6.5 Z" fill="#C15A3A"/>
-    </marker>
-  </defs>
-  <!-- Outer orbital ring -->
-  <circle cx="22" cy="22" r="17" fill="none" stroke="#C15A3A" stroke-width="1.5" opacity="0.6"/>
-  <!-- Inner field region (Turing spot) -->
-  <circle cx="22" cy="22" r="7" fill="#315C4C" opacity="0.20"/>
-  <circle cx="22" cy="22" r="4" fill="#315C4C" opacity="0.35"/>
-  <!-- Particle on orbit, top -->
-  <circle cx="22" cy="5" r="3" fill="#C15A3A"/>
-  <!-- Curved arrow showing rotation direction -->
-  <path d="M 26 6.5 A 17 17 0 0 1 38.5 19" fill="none" stroke="#C15A3A" stroke-width="1.5" marker-end="url(#arw)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56">
+  <!-- 7-armed star ascidian schematic as logo -->
+  <!-- Central atrium disk -->
+  <circle cx="28" cy="28" r="6" fill="#315C4C" opacity="0.85"/>
+  <!-- 7 radial arm lobes -->
+  <ellipse cx="28" cy="11" rx="3.2" ry="7" fill="#C15A3A" opacity="0.80" transform="rotate(0 28 28)"/>
+  <ellipse cx="28" cy="11" rx="3.2" ry="7" fill="#C15A3A" opacity="0.80" transform="rotate(51.4 28 28)"/>
+  <ellipse cx="28" cy="11" rx="3.2" ry="7" fill="#C15A3A" opacity="0.80" transform="rotate(102.8 28 28)"/>
+  <ellipse cx="28" cy="11" rx="3.2" ry="7" fill="#C15A3A" opacity="0.80" transform="rotate(154.2 28 28)"/>
+  <ellipse cx="28" cy="11" rx="3.2" ry="7" fill="#C15A3A" opacity="0.80" transform="rotate(205.7 28 28)"/>
+  <ellipse cx="28" cy="11" rx="3.2" ry="7" fill="#C15A3A" opacity="0.80" transform="rotate(257.1 28 28)"/>
+  <ellipse cx="28" cy="11" rx="3.2" ry="7" fill="#C15A3A" opacity="0.80" transform="rotate(308.5 28 28)"/>
+  <!-- Atrium re-draw on top -->
+  <circle cx="28" cy="28" r="5.5" fill="#315C4C" opacity="0.90"/>
 </svg>

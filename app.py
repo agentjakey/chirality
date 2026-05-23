@@ -1,6 +1,6 @@
 """
-Chirality Atlas: Particles, Patterns, and Handedness in Active Matter.
-Interactive Streamlit application.
+Chirality Atlas: Star Ascidian Edition
+Interactive demo app.
 
 Run from repo root:
     streamlit run app.py
@@ -15,60 +15,26 @@ warnings.filterwarnings("ignore")
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import numpy as np
 import streamlit as st
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-from chirality.particle_sim import simulate_abp, simulate_chiral_abp, simulate_vicsek_chiral
-from chirality.particle_metrics import (
-    polar_order, swirl_index, boundary_accumulation,
-    average_neighbor_count, compute_all_particle_metrics,
-    polar_order_timeseries, mean_squared_displacement,
-)
-from chirality.pattern_sim import (
-    simulate_gray_scott, simulate_feed_gradient,
-    simulate_obstacle, simulate_chiral_source_gray_scott,
-)
-from chirality.pattern_metrics import (
-    pattern_strength, count_clusters, field_asymmetry,
-    compute_all_pattern_metrics,
-)
-from chirality.plotting import (
-    plot_particle_snapshot, plot_gray_scott_final,
-    plot_field, plot_phase_diagram, plot_trajectory_trails,
-    plot_particle_snapshot_simple,
-)
-from chirality.export import load_phase_diagram_data
-from chirality.storytelling import summarize_particle_metrics, summarize_pattern_metrics
-from chirality.presets import (
-    BASELINE_ACTIVE_BROWNIAN, VICSEK_FLOCKING, CHIRAL_VORTEX_GAS,
-    BOUNDARY_EDGE_CURRENT, RACEMIC_LEFT_RIGHT_COMPETITION,
-    GRAY_SCOTT_SPOTS, GRAY_SCOTT_LABYRINTH, FEED_GRADIENT_PATTERN,
-    OBSTACLE_DISRUPTED_PATTERN, CHIRAL_SOURCE_PATTERN,
-)
-
-# ============================================================
-# Page config
-# ============================================================
-
+# ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Chirality Atlas",
+    page_title="Chirality Atlas: Star Ascidian",
     page_icon="assets/favicon.svg",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
 
-# ============================================================
-# CSS + logo
-# ============================================================
+# ── CSS + assets ───────────────────────────────────────────────────────────────
 
 def _load_css():
-    css_path = os.path.join(os.path.dirname(__file__), "assets", "style.css")
-    if os.path.exists(css_path):
-        with open(css_path) as f:
+    p = os.path.join("assets", "style.css")
+    if os.path.exists(p):
+        with open(p) as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
@@ -80,1444 +46,1096 @@ def _load_svg(path):
 
 
 _load_css()
+_LOGO_SVG = _load_svg(os.path.join("assets", "logo.svg"))
 
 
-# ============================================================
-# Utility helpers
-# ============================================================
+# ── Helpers ────────────────────────────────────────────────────────────────────
 
-def _fig_to_bytes(fig, dpi=150):
+def _fig_bytes(fig, dpi=120):
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
+    fig.savefig(buf, format="png", dpi=dpi, bbox_inches="tight",
+                facecolor=fig.get_facecolor())
     buf.seek(0)
     return buf.getvalue()
 
 
-def _download_btn(fig, filename):
-    st.download_button(
-        label="Download figure",
-        data=_fig_to_bytes(fig),
-        file_name=filename,
-        mime="image/png",
-    )
-
-
-def _sci_caption(text):
-    st.markdown(f"<p class='fig-caption'>{text}</p>", unsafe_allow_html=True)
-
-
-def _rule():
-    st.markdown("<hr/>", unsafe_allow_html=True)
-
-
-# ============================================================
-# Cached quick-preview simulations (run once per session)
-# ============================================================
-
-@st.cache_data(show_spinner=False)
-def _preview_particle():
-    hist = simulate_chiral_abp(
-        N=100, L=8.0, v0=0.5, Dr=0.2, omega=2.0, chirality_mode="right",
-        dt=0.01, n_steps=400, seed=42, boundary_mode="periodic", save_every=20,
-    )
-    return hist
-
-
-@st.cache_data(show_spinner=False)
-def _preview_pattern():
-    hist = simulate_gray_scott(
-        nx=128, ny=128, Du=0.16, Dv=0.08, F=0.04, k=0.06,
-        dt=1.0, n_steps=4000, seed=42, save_every=4000, n_seeds=6,
-    )
-    return hist
-
-
-@st.cache_data(show_spinner=False)
-def _cached_particle_sweep(n_pts, n_particles, n_steps_sweep):
-    from chirality.phase_sweeps import sweep_noise_vs_chirality
-    return sweep_noise_vs_chirality(
-        noise_values=np.linspace(0.1, 3.0, n_pts),
-        chirality_values=np.linspace(0.0, 4.0, n_pts),
-        N=n_particles, n_steps=n_steps_sweep, verbose=False,
-    )
-
-
-@st.cache_data(show_spinner=False)
-def _cached_pattern_sweep(n_pts, nx, n_steps_sweep):
-    from chirality.phase_sweeps import sweep_gray_scott_F_k
-    return sweep_gray_scott_F_k(
-        F_values=np.linspace(0.01, 0.07, n_pts),
-        k_values=np.linspace(0.04, 0.07, n_pts),
-        nx=nx, ny=nx, n_steps=n_steps_sweep, verbose=False,
-    )
-
-
-# ============================================================
-# Shared figure helpers
-# ============================================================
-
-def _particle_figure(hist, title="", with_trails=False):
-    if with_trails and hist.positions.shape[0] >= 3:
-        fig = plot_trajectory_trails(
-            hist.positions, hist.thetas, hist.omegas, hist.L,
-            n_trail=min(6, hist.positions.shape[0]),
-            title=title,
-        )
-    else:
-        fig = plot_particle_snapshot(
-            hist.positions[-1], hist.thetas[-1], hist.omegas, hist.L,
-            title=title, show_arrows=True,
-        )
-    return fig
-
-
-def _pattern_figure(hist, title="", show_both=False):
-    if show_both:
-        return plot_gray_scott_final(hist.u_final, hist.v_final, title=title)
-    return plot_field(hist.v_final, title=f"{title} (v field)", vmin=0, vmax=0.5)
-
-
-def _show_particle_metrics(metrics):
-    cols = st.columns(4)
-    cols[0].metric("Polar Order", f"{metrics['polar_order_final']:.3f}")
-    cols[1].metric("Swirl Index", f"{metrics['swirl_index']:.3f}")
-    cols[2].metric("Clusters", f"{int(metrics['n_clusters'])}")
-    cols[3].metric("Boundary Accum.", f"{metrics['boundary_accumulation']:.3f}")
-
-
-def _show_pattern_metrics(metrics):
-    cols = st.columns(4)
-    cols[0].metric("Pattern Strength", f"{metrics['pattern_strength']:.4f}")
-    cols[1].metric("Cluster Count", f"{int(metrics['n_clusters'])}")
-    cols[2].metric("Mean v", f"{metrics['mean_v']:.4f}")
-    cols[3].metric("LR Asymmetry", f"{metrics['field_asymmetry_lr']:.5f}")
-
-
-# ============================================================
-# Tab 1: Overview
-# ============================================================
-
-def tab_overview():
-    svg_logo = _load_svg(os.path.join("assets", "logo.svg"))
-    logo_html = (
-        f'<div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">'
-        f'<div style="width:44px;height:44px;flex-shrink:0;">{svg_logo}</div>'
-        f'<div><h1 style="margin:0;border:none;">Chirality Atlas</h1>'
-        f'<p style="margin:0;color:#555;font-size:0.95rem;font-style:italic;">'
-        f'Particles, patterns, and handedness in active matter.</p></div>'
-        f'</div>'
-    )
-    st.markdown(logo_html, unsafe_allow_html=True)
-
+def _show_image_safe(path, caption=None, width=None):
+    """Show a pregenerated image or a placeholder if missing."""
+    if os.path.exists(path):
+        kwargs = {"use_container_width": width is None}
+        if width:
+            kwargs = {"width": width}
+        st.image(path, caption=caption, **kwargs)
+        return True
     st.markdown(
-        "<p style='font-size:1.15rem;color:#315C4C;font-weight:700;margin-top:0.3rem;'>"
-        "Local rules plus broken symmetry can create large-scale biological structure."
-        "</p>",
+        f"<div class='limit-box'>Image not found: <code>{path}</code><br>"
+        "Run <code>python scripts/05_make_all_assets.py</code> to generate it.</div>",
         unsafe_allow_html=True,
     )
-    _rule()
+    return False
 
-    # Central question
+
+def _show_gif_safe(path, caption=None):
+    """Show a GIF or placeholder."""
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            data = f.read()
+        st.image(data, caption=caption, use_container_width=True)
+        return True
     st.markdown(
-        "<h2 style='color:#C15A3A;border:none;'>Can microscopic handedness reshape living matter?</h2>",
+        f"<div class='limit-box'>GIF not found: <code>{path}</code><br>"
+        "Run <code>python scripts/04_make_movies.py</code></div>",
         unsafe_allow_html=True,
     )
+    return False
+
+
+def _notice(text):
     st.markdown(
-        "Biological systems are pervaded by chirality. Bacteria swim in helical paths. "
-        "Developing embryos break left-right symmetry to place heart and liver correctly. "
-        "Snail shells coil in a fixed direction. This project asks a computational version "
-        "of that question: if we give simulated particles or chemical fields a sense of "
-        "handedness, what changes at large scales?"
-    )
-
-    _rule()
-
-    # Preview images
-    col_p, col_f = st.columns(2)
-
-    with col_p:
-        st.markdown("#### Particle track")
-        st.markdown(
-            "Active Brownian Particles extended with a rotation rate. "
-            "Each particle traces a small circle; together they form edge currents and swirl patterns."
-        )
-        with st.spinner("Generating particle preview..."):
-            hist = _preview_particle()
-        fig = _particle_figure(hist, title="Chiral ABP (omega=2.0, right)")
-        st.pyplot(fig, use_container_width=True)
-        plt.close(fig)
-        _sci_caption(
-            "N=100 chiral right-handed particles in a periodic box. "
-            "Red = right-handed, blue = left-handed (all red here). "
-            "Polar order is low because individual circles do not align collectively."
-        )
-
-    with col_f:
-        st.markdown("#### Pattern track")
-        st.markdown(
-            "Gray-Scott reaction-diffusion with spatial gradients and a chiral source. "
-            "Feed and kill rates determine whether spots, stripes, or uniform states appear."
-        )
-        with st.spinner("Generating pattern preview..."):
-            hist_p = _preview_pattern()
-        fig2 = _pattern_figure(hist_p, title="Gray-Scott labyrinth (F=0.04, k=0.06)")
-        st.pyplot(fig2, use_container_width=True)
-        plt.close(fig2)
-        _sci_caption(
-            "v-field (activator) in the Gray-Scott model after 4000 steps. "
-            "Multiple seeds produce labyrinthine stripes. Pattern strength = std(v) > 0.10."
-        )
-
-    _rule()
-
-    # Tutorial connections
-    st.markdown("#### Built from the two hackathon tutorials")
-    col_t1, col_t2 = st.columns(2)
-    with col_t1:
-        st.markdown(
-            "**Active matter tutorial**\n"
-            "- NumPy random walks\n"
-            "- Active Brownian particles\n"
-            "- Vicsek flocking\n"
-            "- Polar order parameter\n"
-            "- Mean squared displacement\n"
-            "- One and two-parameter phase diagrams\n"
-            "- Mini-challenge: chirality extension"
-        )
-    with col_t2:
-        st.markdown(
-            "**Pattern formation tutorial**\n"
-            "- 2D fields as images\n"
-            "- Diffusion and logistic growth\n"
-            "- Gray-Scott model\n"
-            "- Feed and kill parameters\n"
-            "- Pattern strength, cluster count\n"
-            "- Feed gradients and circular obstacles\n"
-            "- Mini-challenge: modify, measure, interpret"
-        )
-
-    _rule()
-
-    # What to notice
-    st.info(
-        "**What to notice**\n\n"
-        "In the Particle Lab: adding chirality (omega) makes particles circle. "
-        "At a circular boundary, this creates a persistent edge current. "
-        "Racemic mixtures compete and produce no net swirl.\n\n"
-        "In the Pattern Lab: the feed rate F controls what pattern forms. "
-        "An obstacle disrupts the pattern locally. "
-        "A rotating source (toy model) introduces a small but detectable left-right asymmetry.\n\n"
-        "In the Bridge Lab: both tracks respond to the same principle -- "
-        "local symmetry breaking produces macroscopic spatial structure."
+        f"<div class='notice-box'><strong>What to notice:</strong> {text}</div>",
+        unsafe_allow_html=True,
     )
 
 
-# ============================================================
-# Tab 2: Particle Lab
-# ============================================================
-
-_PARTICLE_PRESETS = {
-    "Chiral Vortex Gas": {
-        "desc": "All particles rotate right (omega > 0, no boundary confinement). "
-                "Individual circular orbits. Low polar order; non-zero swirl.",
-        "N": 200, "v0": 0.5, "Dr": 0.2, "omega": 2.0, "chirality_mode": "right",
-        "eta_vicsek": 0.15, "align": False, "repulsion": False, "repulsion_str": 1.0,
-        "boundary_mode": "periodic", "n_steps": 500, "model": "chiral_abp",
-    },
-    "Baseline ABP": {
-        "desc": "Standard active Brownian particles with no alignment and no chirality. "
-                "Low polar order at high noise; ballistic at low noise.",
-        "N": 200, "v0": 0.5, "Dr": 0.5, "omega": 0.0, "chirality_mode": "none",
-        "eta_vicsek": 0.15, "align": False, "repulsion": False, "repulsion_str": 1.0,
-        "boundary_mode": "periodic", "n_steps": 500, "model": "abp",
-    },
-    "Vicsek Flocking": {
-        "desc": "Vicsek model: local alignment within radius R. "
-                "Low noise gives high polar order (flock). High noise destroys the flock.",
-        "N": 200, "v0": 0.5, "Dr": 0.15, "omega": 0.0, "chirality_mode": "none",
-        "eta_vicsek": 0.15, "align": True, "repulsion": False, "repulsion_str": 1.0,
-        "boundary_mode": "periodic", "n_steps": 500, "model": "vicsek",
-    },
-    "Boundary Edge Current": {
-        "desc": "Right-handed particles confined in a circular trap. "
-                "They accumulate at the boundary and orbit in a fixed direction.",
-        "N": 200, "v0": 0.5, "Dr": 0.3, "omega": 3.0, "chirality_mode": "right",
-        "eta_vicsek": 0.15, "align": False, "repulsion": False, "repulsion_str": 1.0,
-        "boundary_mode": "circular_trap", "n_steps": 600, "model": "chiral_abp",
-    },
-    "Racemic Competition": {
-        "desc": "Equal numbers of left- and right-handed particles with soft repulsion. "
-                "Net swirl is near zero; particles mix but form local clusters.",
-        "N": 200, "v0": 0.5, "Dr": 0.3, "omega": 2.0, "chirality_mode": "racemic",
-        "eta_vicsek": 0.15, "align": False, "repulsion": True, "repulsion_str": 2.0,
-        "boundary_mode": "periodic", "n_steps": 600, "model": "chiral_abp",
-    },
-}
-
-
-def tab_particle_lab():
-    st.markdown("## Particle Lab")
+def _limit(text):
     st.markdown(
-        "Run active particle simulations and measure collective order. "
-        "Choose a preset or adjust parameters manually, then click **Run**."
+        f"<div class='limit-box'><strong>Limitation:</strong> {text}</div>",
+        unsafe_allow_html=True,
     )
 
-    col_ctrl, col_out = st.columns([1, 2], gap="large")
 
-    with col_ctrl:
-        preset_name = st.selectbox(
-            "Preset",
-            list(_PARTICLE_PRESETS.keys()),
-            index=0,
-            key="p_preset",
-        )
-        p = _PARTICLE_PRESETS[preset_name]
+def _metric_row(pairs):
+    """pairs: list of (label, value, help) tuples. Renders st.metric in columns."""
+    cols = st.columns(len(pairs))
+    for col, (label, value, help_text) in zip(cols, pairs):
+        col.metric(label, value, help=help_text)
+
+
+# ── Cached model runs ─────────────────────────────────────────────────────────
+
+@st.cache_data(show_spinner=False, max_entries=6)
+def _cached_colony(
+    seed, preset,
+    n_arms, n_per_arm, omega, Dr, k_radial, k_angular,
+    grid_size, Dh, n_field_steps, n_agent_steps, boundary,
+):
+    from chirality.star_ascidian.hybrid_model import simulate_star_ascidian_colony
+    return simulate_star_ascidian_colony(
+        preset=preset, seed=seed,
+        n_snapshots=10,
+        n_arms=n_arms, n_per_arm=n_per_arm, omega=float(omega),
+        Dr=float(Dr), k_radial=float(k_radial), k_angular=float(k_angular),
+        grid_size=int(grid_size), Dh=float(Dh),
+        n_field_steps=int(n_field_steps), n_steps=int(n_agent_steps),
+        boundary=boundary,
+        mode="chiral_twist" if omega > 0 else "radial_clean",
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=3)
+def _cached_sweep_A(seed=42):
+    from chirality.star_ascidian.phase_diagram import sweep_attraction_vs_chirality
+    kv = np.array([0.5, 1.0, 2.0, 3.5, 5.0])
+    ov = np.array([0.0, 0.5, 1.5, 3.0, 5.0])
+    return sweep_attraction_vs_chirality(k_radial_vals=kv, omega_vals=ov, seed=seed)
+
+
+@st.cache_data(show_spinner=False, max_entries=3)
+def _cached_sweep_B(seed=42):
+    from chirality.star_ascidian.phase_diagram import sweep_noise_vs_repulsion
+    dv = np.array([0.01, 0.1, 0.3, 0.7, 1.5])
+    kav = np.array([0.1, 0.3, 0.6, 1.0, 1.5])
+    return sweep_noise_vs_repulsion(Dr_vals=dv, k_angular_vals=kav, seed=seed)
+
+
+@st.cache_data(show_spinner=False, max_entries=3)
+def _cached_sweep_C(seed=42):
+    from chirality.star_ascidian.phase_diagram import sweep_inhibition_ratio
+    dhv = np.array([0.5, 1.0, 2.0, 5.0, 10.0])
+    mhv = np.array([0.02, 0.05, 0.10, 0.20, 0.40])
+    return sweep_inhibition_ratio(Dh_vals=dhv, mu_h_vals=mhv, seed=seed)
+
+
+# ── Header ─────────────────────────────────────────────────────────────────────
+
+def _render_header():
+    c1, c2 = st.columns([1, 14])
+    with c1:
+        if _LOGO_SVG:
+            st.markdown(_LOGO_SVG, unsafe_allow_html=True)
+    with c2:
         st.markdown(
-            f"<p style='font-size:0.83rem;color:#555;font-style:italic;'>{p['desc']}</p>",
+            "<p class='app-title'>Chirality Atlas: Star Ascidian Edition</p>"
+            "<p class='app-subtitle'>Can local rules generate a living star pattern?</p>",
             unsafe_allow_html=True,
         )
-        _rule()
+    st.markdown("<hr style='margin:0.4rem 0 0.8rem 0;border-color:#DDD5C8'/>",
+                unsafe_allow_html=True)
 
-        N = st.slider("N (particles)", 50, 400, p["N"], step=25, key="p_N")
-        v0 = st.slider("Speed v0", 0.1, 2.0, p["v0"], step=0.05, key="p_v0")
-        Dr = st.slider("Rotational noise Dr", 0.05, 5.0, p["Dr"], step=0.05, key="p_Dr")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 1 — TARGET PATTERN
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _tab_target():
+    st.markdown("## Biological Target: *Botryllus schlosseri*")
+    st.markdown(
+        "*Botryllus schlosseri* is a colonial tunicate (sea squirt) that tiles "
+        "hard substrates as a mat of star-shaped systems. Each star consists of "
+        "5–10 zooids (individual filter-feeding animals) arranged radially around "
+        "a shared central atrium. Neighboring stars maintain characteristic spacing "
+        "and do not merge under normal conditions. Some genetic variants exhibit "
+        "consistent rotational handedness — a biological chirality signature."
+    )
+
+    col_img, col_info = st.columns([1, 1], gap="large")
+
+    with col_img:
+        ref_path = os.path.join("assets", "reference", "star_ascidian_reference.jpg")
+        if os.path.exists(ref_path):
+            st.image(ref_path, caption="Botryllus schlosseri colony (reference)",
+                     use_container_width=True)
+        else:
+            _show_image_safe(
+                os.path.join("outputs", "star_ascidian", "simulation_vs_target_features.png"),
+                caption="Simulation vs target features (pregenerated). "
+                        "Add assets/reference/star_ascidian_reference.jpg for the real organism.",
+            )
+
+    with col_info:
+        st.markdown("### Target Features")
+
+        features = [
+            ("Multiple star centers", "Repeated tiling of the substrate",
+             "n_centers from GM field", True),
+            ("Radial zooid arrangement", "Zooids at target radius from center",
+             "radial_order_score > 0.7", True),
+            ("Discrete arm lobes", "5-10 angular peaks per star",
+             "arm_count from angular histogram", True),
+            ("Even arm spacing", "Arms equally distributed in angle",
+             "angular_uniformity_score > 0.8", True),
+            ("Star non-merging", "Neighboring stars stay separate",
+             "merge_score < 0.1", True),
+            ("Chirality sensitivity", "Omega > 0 produces measurable swirl",
+             "swirl_score != 0", True),
+            ("Colony-level tiling", "Stars tile the surface without gaps",
+             "center_spacing_cv < 0.3", False),
+        ]
+
+        for name, desc, metric, implemented in features:
+            icon = "+" if implemented else "-"
+            color = "#315C4C" if implemented else "#888"
+            st.markdown(
+                f"<div style='margin:0.35rem 0; padding:0.4rem 0.7rem; "
+                f"border-left:3px solid {color}; background:#FAFAF7; font-size:0.88rem'>"
+                f"<span style='color:{color};font-weight:700'>{icon}</span> "
+                f"<strong>{name}</strong>: {desc} "
+                f"<span style='color:#888;font-size:0.82rem'>({metric})</span></div>",
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("---")
+    st.markdown("### Model Hypothesis")
+    st.info(
+        "A two-layer generative model — an activator-inhibitor (Gierer-Meinhardt) "
+        "field for center placement, and active zooid-like particles for arm formation "
+        "— can reproduce the spatial geometry of Botryllus star colonies using only "
+        "local interaction rules, without reference to organism-specific biochemistry."
+    )
+
+    _notice(
+        "The radial arm structure and colony-level spacing are captured well. "
+        "Arm count detection (via angular histogram peaks) is sensitive to agent "
+        "density and can undercount at low agents-per-arm. The model does not "
+        "reproduce blastogenic cycling, colonial immune recognition, or 3D substrate "
+        "mechanics."
+    )
+
+    with st.expander("Limitations (expand)"):
+        st.markdown("""
+- **Not organism-specific.** No Botryllus signaling molecules, no developmental staging.
+- **Arm count metric** uses `find_peaks` on angular histograms; underestimates at
+  low agent density (< 5 per arm).
+- **2D only.** No substrate curvature, no hydrodynamic coupling between zooids.
+- **Parameter values** are not derived from organism measurements; they produce
+  visually plausible patterns but cannot be compared to biological rates.
+- **Colonial immune recognition** (self/non-self fusions) is not modeled.
+        """)
+
+    st.markdown("---")
+    st.markdown("### What the Simulation Produces")
+    _show_image_safe(
+        os.path.join("outputs", "panels", "slide1_target_and_simulation.png"),
+        caption="Left: target morphology schematic. Center: GM activator field. "
+                "Right: zooid agent final state.",
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 2 — MODEL BUILDER
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _tab_model_builder():
+    st.markdown("## Model Builder")
+    st.markdown(
+        "Configure both layers and run a full colony simulation. "
+        "Computationally expensive settings are capped for app safety."
+    )
+
+    st.markdown("### Layer 1 — Activator-Inhibitor Field (Gierer-Meinhardt)")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        grid_size = st.select_slider(
+            "Grid size (N x N)", options=[16, 32, 64],
+            value=32, help="Larger = more centers possible, slower",
+        )
+        n_field_steps = st.slider(
+            "Field simulation steps", 500, 2000, 1200, step=250,
+            help="More steps = better-equilibrated spots",
+        )
+    with c2:
+        Dh = st.slider(
+            "Dh (inhibitor diffusion)", 0.5, 15.0, 5.0, step=0.5,
+            help="Higher Dh/Da = more Turing spots = more star centers",
+        )
+        mu_h = st.slider(
+            "mu_h (inhibitor decay)", 0.01, 0.40, 0.05, step=0.01,
+            help="Higher mu_h = inhibitor decays faster = fewer, denser spots",
+        )
+    with c3:
+        min_distance = st.slider(
+            "Min center separation", 1.0, 4.0, 2.0, step=0.25,
+            help="Minimum physical distance between star centers",
+        )
+
+    st.markdown("### Layer 2 — Zooid Agents")
+    c4, c5, c6 = st.columns(3)
+    with c4:
+        n_arms = st.slider("Target arms per star", 3, 10, 7,
+                           help="Sets arm initialization and angular repulsion spacing")
+        n_per_arm = st.slider("Agents per arm", 1, 6, 3,
+                              help="Total agents per center = n_arms x n_per_arm")
         omega = st.slider(
-            "Chirality omega", 0.0, 6.0, p["omega"], step=0.1, key="p_omega",
-            help="Rotation rate (rad per time unit). 0 = no chirality."
+            "omega (chirality rate)", 0.0, 5.0, 0.0, step=0.25,
+            help="0 = no twist. Positive = CCW arm rotation.",
+        )
+    with c5:
+        Dr = st.slider("Dr (rotational noise)", 0.01, 1.5, 0.04, step=0.01,
+                       help="Higher Dr = noisier arm structure")
+        k_radial = st.slider("k_radial (arm tightness)", 0.5, 5.0, 2.0, step=0.25,
+                             help="Radial spring toward r_target")
+        k_angular = st.slider("k_angular (arm separation)", 0.1, 2.0, 0.6, step=0.1,
+                              help="Repulsion between adjacent arms")
+    with c6:
+        n_agent_steps = st.slider(
+            "Agent simulation steps", 100, 600, 300, step=50,
+            help="More steps = better-formed arms, slower",
+        )
+        boundary = st.selectbox("Boundary condition", ["periodic", "box"],
+                                help="Periodic = torus. Box = hard walls.")
+        seed = st.number_input("Random seed", min_value=0, max_value=9999,
+                               value=42, step=1)
+
+    # Safety cap warning
+    if grid_size == 64 and n_field_steps > 1500:
+        st.warning(
+            "N=64 with >1500 field steps can take 30-60 seconds. "
+            "Consider N=32 for quick exploration."
         )
 
-        model_choice = p["model"]
-        if model_choice == "vicsek":
-            eta = st.slider("Alignment noise eta", 0.0, 1.0, p["eta_vicsek"], step=0.01, key="p_eta")
-        else:
-            eta = p["eta_vicsek"]
+    run_col, _ = st.columns([2, 8])
+    with run_col:
+        run_clicked = st.button("Run Simulation", type="primary", key="run_model_builder")
 
-        boundary_mode = st.selectbox(
-            "Boundary mode",
-            ["periodic", "reflective", "circular_trap"],
-            index=["periodic", "reflective", "circular_trap"].index(p["boundary_mode"]),
-            key="p_bmode",
-        )
-
-        use_repulsion = st.checkbox("Soft repulsion", value=p["repulsion"], key="p_repul")
-        if use_repulsion:
-            rep_str = st.slider("Repulsion strength", 0.5, 5.0, p["repulsion_str"], step=0.25, key="p_rep_str")
-        else:
-            rep_str = 1.0
-
-        n_steps = st.slider("Steps", 100, 1000, p["n_steps"], step=50, key="p_nsteps")
-        seed = st.number_input("Random seed", value=42, step=1, key="p_seed")
-
-        show_trails = st.checkbox("Show trajectory trails", value=False, key="p_trails")
-
-        _rule()
-
-        if N > 300 and use_repulsion:
-            st.warning("N > 300 with repulsion enabled can be slow (O(N^2) pairs). Consider reducing N.")
-
-        run_btn = st.button("Run Particle Simulation", type="primary", key="p_run")
-
-    with col_out:
-        if run_btn:
-            params = dict(
-                N=N, L=10.0, v0=v0, Dr=Dr, omega=omega, n_steps=n_steps,
-                seed=int(seed), boundary_mode=boundary_mode,
-                repulsion=use_repulsion, repulsion_strength=rep_str,
-                repulsion_range=0.4, save_every=max(1, n_steps // 50),
-            )
+    if run_clicked or ("mb_result" in st.session_state):
+        if run_clicked:
             with st.spinner("Running simulation..."):
-                if model_choice == "abp":
-                    hist = simulate_abp(
-                        N=N, L=10.0, v0=v0, Dr=Dr, dt=0.01,
-                        n_steps=n_steps, seed=int(seed),
-                        boundary_mode=boundary_mode,
-                        save_every=max(1, n_steps // 50),
+                try:
+                    result = _cached_colony(
+                        seed=int(seed), preset="clean_star_systems",
+                        n_arms=int(n_arms), n_per_arm=int(n_per_arm),
+                        omega=float(omega), Dr=float(Dr),
+                        k_radial=float(k_radial), k_angular=float(k_angular),
+                        grid_size=int(grid_size), Dh=float(Dh),
+                        n_field_steps=int(n_field_steps),
+                        n_agent_steps=int(n_agent_steps),
+                        boundary=boundary,
                     )
-                    hist.omegas = np.zeros(N)
-                elif model_choice == "vicsek":
-                    hist = simulate_vicsek_chiral(
-                        N=N, L=10.0, v0=v0, R=1.0, eta=eta, omega=omega,
-                        dt=0.1, n_steps=n_steps, seed=int(seed),
-                        boundary_mode=boundary_mode,
-                        save_every=max(1, n_steps // 50),
-                    )
-                else:
-                    chirality_mode = "right" if omega > 0 else "none"
-                    if preset_name == "Racemic Competition":
-                        chirality_mode = "racemic"
-                    hist = simulate_chiral_abp(
-                        N=N, L=10.0, v0=v0, Dr=Dr, omega=abs(omega),
-                        chirality_mode=chirality_mode, dt=0.01, n_steps=n_steps,
-                        seed=int(seed), boundary_mode=boundary_mode,
-                        repulsion=use_repulsion, repulsion_strength=rep_str,
-                        repulsion_range=0.4,
-                        save_every=max(1, n_steps // 50),
-                    )
-                metrics = compute_all_particle_metrics(hist, R_neighbor=1.0)
-                st.session_state["p_hist"] = hist
-                st.session_state["p_metrics"] = metrics
-                st.session_state["p_label"] = preset_name
+                    st.session_state["mb_result"] = result
+                except Exception as e:
+                    st.error(f"Simulation failed: {e}")
+                    return
 
-        if "p_hist" in st.session_state:
-            hist = st.session_state["p_hist"]
-            metrics = st.session_state["p_metrics"]
-            label = st.session_state.get("p_label", "")
+        result = st.session_state.get("mb_result")
+        if result is None:
+            return
 
-            fig = _particle_figure(hist, title=label, with_trails=show_trails)
+        st.markdown("---")
+        st.markdown("### Simulation Result")
+
+        m = result.metrics
+        _metric_row([
+            ("Star-likeness", f"{m['star_likeness_score']:.3f}",
+             "Composite score in [0,1]. >0.6 = good stars."),
+            ("Radial order", f"{m['radial_order']:.3f}",
+             "Fraction of agents near r_target. 1.0 = perfect ring."),
+            ("Arm count (mean)", f"{m['arm_count_mean']:.1f}",
+             f"Detected angular peaks vs target {n_arms}"),
+            ("Swirl score", f"{m['swirl_score']:.3f}",
+             "Net tangential velocity. 0 = radial, nonzero = chiral."),
+            ("Fragmentation", f"{m['fragmentation']:.3f}",
+             "Fraction of escaped agents. <0.1 = well-contained."),
+        ])
+
+        ic1, ic2 = st.columns(2, gap="medium")
+        with ic1:
+            fig, ax = plt.subplots(figsize=(5, 5), facecolor="#F7F3EA")
+            ax.set_facecolor("#FFFFFF")
+            ax.imshow(result.field, origin="lower",
+                      extent=[0, result.params["L"], 0, result.params["L"]],
+                      cmap="YlOrBr", interpolation="nearest")
+            ax.scatter(result.centers[:, 0], result.centers[:, 1],
+                       s=40, color="#1F2421", marker="+", linewidths=1.5, zorder=4)
+            ax.set_title(
+                f"GM activator field  (K={result.zooid.K} centers)",
+                fontsize=11, color="#1F2421",
+            )
+            ax.set_xlabel("x", fontsize=9, color="#1F2421")
+            ax.set_ylabel("y", fontsize=9, color="#1F2421")
+            ax.tick_params(colors="#1F2421", labelsize=8)
             st.pyplot(fig, use_container_width=True)
-            _download_btn(fig, f"particle_{label.lower().replace(' ','_')}.png")
             plt.close(fig)
 
-            _sci_caption(
-                f"Final snapshot after {hist.positions.shape[0]-1} saved frames. "
-                f"Colors: red = right-handed (omega > 0), blue = left-handed (omega < 0), "
-                f"white = no chirality."
+        with ic2:
+            palette = ["#C15A3A", "#315C4C", "#7B6B8B", "#8B7355",
+                       "#4A7B8B", "#8B4A6B", "#6B8B4A"]
+            fig, ax = plt.subplots(figsize=(5, 5), facecolor="#F7F3EA")
+            ax.set_facecolor("#F7F3EA")
+            pos = result.zooid.positions[-1]
+            K = result.zooid.K
+            L = result.params["L"]
+            for k in range(K):
+                mask = result.zooid.assignments == k
+                ax.scatter(pos[mask, 0], pos[mask, 1], s=10,
+                           color=palette[k % len(palette)], alpha=0.80,
+                           linewidths=0, zorder=2)
+            ax.scatter(result.centers[:, 0], result.centers[:, 1],
+                       s=45, color="#1F2421", marker="+", linewidths=1.5, zorder=4)
+            ax.set_xlim(0, L)
+            ax.set_ylim(0, L)
+            ax.set_title(
+                f"Zooid agents  (N={result.zooid.N}, omega={omega:.1f})",
+                fontsize=11, color="#1F2421",
             )
-            _rule()
+            ax.set_xlabel("x", fontsize=9, color="#1F2421")
+            ax.set_ylabel("y", fontsize=9, color="#1F2421")
+            ax.tick_params(colors="#1F2421", labelsize=8)
+            st.pyplot(fig, use_container_width=True)
+            plt.close(fig)
 
-            _show_particle_metrics(metrics)
-            _rule()
+        with st.expander("Detailed diagnostic report"):
+            matches = m.get("matches", [])
+            failures = m.get("failures", [])
+            suggestion = m.get("suggested_fix", "")
+            if matches:
+                st.markdown("**Matches target:**")
+                for t in matches:
+                    st.markdown(f"  + {t}")
+            if failures:
+                st.markdown("**Does not match:**")
+                for t in failures:
+                    st.markdown(f"  - {t}")
+            if suggestion and suggestion != "Parameters look good":
+                st.info(f"Suggestion: {suggestion}")
 
-            # Polar order timeseries
-            phi_ts = polar_order_timeseries(hist.thetas)
-            fig_ts, ax_ts = plt.subplots(figsize=(7, 2.5), facecolor="#F7F3EA")
-            ax_ts.plot(hist.times, phi_ts, color="#315C4C", linewidth=1.5)
-            ax_ts.axhline(phi_ts.mean(), color="#C15A3A", linestyle="--",
-                          linewidth=1, alpha=0.7, label=f"mean={phi_ts.mean():.3f}")
-            ax_ts.set_xlabel("Time")
-            ax_ts.set_ylabel("Polar order phi")
-            ax_ts.set_ylim(0, 1)
-            ax_ts.legend(frameon=False, fontsize=8)
-            ax_ts.set_facecolor("#F7F3EA")
-            ax_ts.spines[["top", "right"]].set_visible(False)
-            fig_ts.tight_layout()
-            st.pyplot(fig_ts, use_container_width=True)
-            plt.close(fig_ts)
-            _sci_caption("Polar order over time. phi=1 means all particles point the same way.")
+        _notice(
+            "Radial order near 1.0 means agents are well-confined at r_target. "
+            "Arm count below target usually means angular repulsion needs to be "
+            "stronger (increase k_angular) or noise lower (decrease Dr). "
+            "Nonzero swirl_score confirms chirality is active."
+        )
 
-            _rule()
-            with st.expander("Interpretation and sanity checks"):
-                st.markdown(summarize_particle_metrics(metrics, label))
-                st.markdown(
-                    "\n**Sanity checks:**\n"
-                    "- High noise Dr >> omega should give phi near 0 (gas-like)\n"
-                    "- Low Dr with Vicsek alignment should give phi near 1 (flock)\n"
-                    "- Zero omega should give swirl index near 0\n"
-                    "- Racemic mixture should give swirl near 0 (left and right cancel)"
-                )
-        else:
-            st.markdown(
-                "<div style='text-align:center;color:#999;margin-top:4rem;'>"
-                "<p style='font-size:1.1rem;'>Select a preset and click Run.</p>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-
-# ============================================================
-# Tab 3: Pattern Lab
-# ============================================================
-
-_PATTERN_PRESETS = {
-    "Gray-Scott Labyrinth": {
-        "desc": "F=0.04, k=0.06. Forms labyrinthine stripes from multiple seeds. "
-                "High pattern strength, few large connected regions.",
-        "nx": 128, "F": 0.04, "k": 0.06, "Du": 0.16, "Dv": 0.08,
-        "n_steps": 4000, "n_seeds": 6, "model": "gray_scott",
-        "F_left": 0.02, "F_right": 0.055, "obs_r": 0.12,
-        "src_str": 0.015, "src_omega": 0.1,
-    },
-    "Gray-Scott Spots": {
-        "desc": "F=0.035, k=0.065. Produces self-organized spots (Turing-like). "
-                "Many small disconnected clusters.",
-        "nx": 128, "F": 0.035, "k": 0.065, "Du": 0.16, "Dv": 0.08,
-        "n_steps": 5000, "n_seeds": 10, "model": "gray_scott",
-        "F_left": 0.02, "F_right": 0.055, "obs_r": 0.12,
-        "src_str": 0.015, "src_omega": 0.1,
-    },
-    "Feed Gradient": {
-        "desc": "Feed rate F varies from F_left (x=0) to F_right (x=L). "
-                "Creates a phase boundary: spots on one side, uniform on the other.",
-        "nx": 128, "F": 0.035, "k": 0.063, "Du": 0.16, "Dv": 0.08,
-        "n_steps": 4000, "n_seeds": 6, "model": "gradient",
-        "F_left": 0.02, "F_right": 0.055, "obs_r": 0.12,
-        "src_str": 0.015, "src_omega": 0.1,
-    },
-    "Circular Obstacle": {
-        "desc": "A circular region where the reaction is blocked. "
-                "Pattern forms around the obstacle; topological defects may appear at the boundary.",
-        "nx": 128, "F": 0.035, "k": 0.065, "Du": 0.16, "Dv": 0.08,
-        "n_steps": 5000, "n_seeds": 10, "model": "obstacle",
-        "F_left": 0.02, "F_right": 0.055, "obs_r": 0.12,
-        "src_str": 0.015, "src_omega": 0.1,
-    },
-    "Chiral Source (toy model)": {
-        "desc": "A rotating injection point orbits the center, injecting v-species. "
-                "Breaks left-right symmetry in the pattern. NOT a real biological mechanism.",
-        "nx": 128, "F": 0.035, "k": 0.065, "Du": 0.16, "Dv": 0.08,
-        "n_steps": 5000, "n_seeds": None, "model": "chiral_source",
-        "F_left": 0.02, "F_right": 0.055, "obs_r": 0.12,
-        "src_str": 0.020, "src_omega": 0.1,
-    },
-}
+    else:
+        st.markdown("---")
+        st.markdown("### Default output (clean_star_systems preset)")
+        _show_image_safe(
+            os.path.join("outputs", "star_ascidian", "clean_star_systems.png"),
+            caption="Pregenerated: clean_star_systems. Adjust parameters above and run.",
+        )
+        _show_image_safe(
+            os.path.join("outputs", "panels", "slide2_model_schematic.png"),
+            caption="Two-layer model architecture.",
+        )
 
 
-def tab_pattern_lab():
-    st.markdown("## Pattern Lab")
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 3 — LIVE PHASE EXPLORER
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _tab_phase_explorer():
+    st.markdown("## Live Phase Explorer")
     st.markdown(
-        "Run Gray-Scott reaction-diffusion simulations and measure emergent pattern structure. "
-        "Choose a preset or adjust parameters, then click **Run**."
+        "Explore how parameters control colony morphology. "
+        "Load pregenerated heatmaps instantly, or run a live sweep on a 5x5 grid."
     )
 
-    col_ctrl, col_out = st.columns([1, 2], gap="large")
+    sweep_name = st.selectbox(
+        "Choose sweep",
+        options=[
+            "A — Radial attraction vs chirality (star-likeness)",
+            "B — Noise vs angular repulsion (fragmentation)",
+            "C — Inhibition ratio vs center spacing quality",
+        ],
+        key="phase_sweep_select",
+    )
 
-    with col_ctrl:
-        preset_name = st.selectbox(
-            "Preset",
-            list(_PATTERN_PRESETS.keys()),
-            index=0,
-            key="pat_preset",
+    run_mode = st.radio(
+        "Mode", ["Load pregenerated (fast)", "Run live 5x5 sweep (~30 sec)"],
+        horizontal=True, key="phase_run_mode",
+    )
+
+    pregenerated_paths = {
+        "A — Radial attraction vs chirality (star-likeness)":
+            os.path.join("outputs", "phase_diagrams",
+                         "star_likeness_attraction_vs_chirality.png"),
+        "B — Noise vs angular repulsion (fragmentation)":
+            os.path.join("outputs", "phase_diagrams",
+                         "fragmentation_noise_vs_repulsion.png"),
+        "C — Inhibition ratio vs center spacing quality":
+            os.path.join("outputs", "phase_diagrams",
+                         "center_spacing_inhibition_ratio.png"),
+    }
+
+    interpretations = {
+        "A — Radial attraction vs chirality (star-likeness)": (
+            "**Reading this plot:** horizontal axis = radial spring strength (k_radial); "
+            "vertical = chirality rate (omega). Bright = high star-likeness score. "
+            "The hotspot at moderate k_radial, low omega is the 'clean star' regime. "
+            "At high omega, the angular momentum overcomes the radial spring and arms blur."
+        ),
+        "B — Noise vs angular repulsion (fragmentation)": (
+            "**Reading this plot:** horizontal = noise (Dr); vertical = angular repulsion "
+            "strength (k_angular). Green = low fragmentation (agents stay in stars); "
+            "Red = high fragmentation (agents escape). Higher k_angular shifts the "
+            "fragmentation boundary toward higher noise — angular repulsion stabilizes arms."
+        ),
+        "C — Inhibition ratio vs center spacing quality": (
+            "**Reading this plot:** horizontal = Dh/Da ratio; vertical = inhibitor decay "
+            "mu_h. Bright = regular, well-spaced centers. High Dh/Da gives the "
+            "short-range activation / long-range inhibition condition needed for "
+            "Turing spots. High mu_h collapses or eliminates spots."
+        ),
+    }
+
+    if run_mode == "Load pregenerated (fast)":
+        _show_image_safe(
+            pregenerated_paths[sweep_name],
+            caption=f"Pregenerated: {sweep_name.split(' — ')[1]}",
         )
-        p = _PATTERN_PRESETS[preset_name]
-        st.markdown(
-            f"<p style='font-size:0.83rem;color:#555;font-style:italic;'>{p['desc']}</p>",
-            unsafe_allow_html=True,
+        _show_image_safe(
+            os.path.join("outputs", "panels", "slide4_phase_diagram.png"),
+            caption="Side-by-side star-likeness and swirl for sweep A.",
         )
-        _rule()
 
-        nx = st.select_slider("Grid size (nx=ny)", [64, 128, 192, 256], value=p["nx"], key="pat_nx")
-        F = st.slider("Feed rate F", 0.005, 0.08, float(p["F"]), step=0.002, key="pat_F",
-                      help="Controls what pattern type forms. Try 0.01-0.07.")
-        k = st.slider("Kill rate k", 0.04, 0.08, float(p["k"]), step=0.001, key="pat_k",
-                      help="Combined removal rate of v. With F, determines pattern regime.")
-        Du = st.slider("Du (substrate diffusion)", 0.08, 0.25, float(p["Du"]), step=0.01, key="pat_Du")
-        Dv = st.slider("Dv (activator diffusion)", 0.02, 0.12, float(p["Dv"]), step=0.005, key="pat_Dv")
-        n_steps = st.slider("Steps", 1000, 8000, p["n_steps"], step=500, key="pat_nsteps")
-        seed = st.number_input("Random seed", value=42, step=1, key="pat_seed")
+    else:
+        live_clicked = st.button("Run live sweep", key="phase_live_run")
 
-        model_choice = p["model"]
-        if model_choice == "gradient":
-            F_left = st.slider("F (left edge)", 0.005, 0.06, float(p["F_left"]), step=0.002, key="pat_Fl")
-            F_right = st.slider("F (right edge)", 0.02, 0.08, float(p["F_right"]), step=0.002, key="pat_Fr")
-        if model_choice == "obstacle":
-            obs_r = st.slider("Obstacle radius (fraction of L)", 0.05, 0.30, float(p["obs_r"]), step=0.01, key="pat_obs")
-        if model_choice == "chiral_source":
-            src_str = st.slider("Source strength", 0.005, 0.05, float(p["src_str"]), step=0.005, key="pat_ss")
-            src_omega = st.slider("Source rotation speed", 0.0, 0.3, float(p["src_omega"]), step=0.01, key="pat_so")
+        if live_clicked or f"phase_result_{sweep_name[0]}" in st.session_state:
+            if live_clicked:
+                with st.spinner("Running 5x5 sweep (25 simulations)..."):
+                    try:
+                        if sweep_name.startswith("A"):
+                            result = _cached_sweep_A(seed=42)
+                            st.session_state["phase_result_A"] = result
+                        elif sweep_name.startswith("B"):
+                            result = _cached_sweep_B(seed=42)
+                            st.session_state["phase_result_B"] = result
+                        else:
+                            result = _cached_sweep_C(seed=42)
+                            st.session_state["phase_result_C"] = result
+                    except Exception as e:
+                        st.error(f"Sweep failed: {e}")
+                        return
 
-        show_u = st.checkbox("Show u field (substrate)", value=False, key="pat_showu")
-        n_seeds_val = p.get("n_seeds")
+            key = f"phase_result_{sweep_name[0]}"
+            cached = st.session_state.get(key)
+            if cached is not None:
+                x_vals, y_vals, grids = cached
 
-        _rule()
+                metric_key = list(grids.keys())[0]
+                grid = grids[metric_key]
 
-        if Du > 0.20:
-            st.warning("High Du may cause instability. Keep Du*dt/dx^2 < 0.25.")
-        if n_steps > 6000 and nx >= 256:
-            st.warning("256x256 with >6000 steps can be slow on a laptop (est. >60s).")
-
-        run_btn = st.button("Run Pattern Simulation", type="primary", key="pat_run")
-
-    with col_out:
-        if run_btn:
-            with st.spinner("Running Gray-Scott simulation..."):
-                if model_choice == "gray_scott":
-                    hist = simulate_gray_scott(
-                        nx=nx, ny=nx, Du=Du, Dv=Dv, F=F, k=k,
-                        dt=1.0, n_steps=n_steps, seed=int(seed),
-                        save_every=n_steps, n_seeds=n_seeds_val,
-                    )
-                elif model_choice == "gradient":
-                    hist = simulate_feed_gradient(
-                        nx=nx, ny=nx, Du=Du, Dv=Dv, F_left=F_left, F_right=F_right,
-                        k=k, dt=1.0, n_steps=n_steps, seed=int(seed),
-                        save_every=n_steps, n_seeds=6,
-                    )
-                elif model_choice == "obstacle":
-                    hist = simulate_obstacle(
-                        nx=nx, ny=nx, Du=Du, Dv=Dv, F=F, k=k,
-                        dt=1.0, n_steps=n_steps, seed=int(seed),
-                        obstacle_cx=0.5, obstacle_cy=0.5, obstacle_r=obs_r,
-                        save_every=n_steps, n_seeds=10,
-                    )
-                elif model_choice == "chiral_source":
-                    hist = simulate_chiral_source_gray_scott(
-                        nx=nx, ny=nx, Du=Du, Dv=Dv, F=F, k=k,
-                        dt=1.0, n_steps=n_steps, seed=int(seed),
-                        source_strength=src_str, source_omega=src_omega,
-                        source_r_orbit=0.20, source_sigma=0.05,
-                        save_every=n_steps, n_seeds=None,
-                    )
-                metrics = compute_all_pattern_metrics(hist)
-                st.session_state["pat_hist"] = hist
-                st.session_state["pat_metrics"] = metrics
-                st.session_state["pat_label"] = preset_name
-                st.session_state["pat_showu"] = show_u
-
-        if "pat_hist" in st.session_state:
-            hist = st.session_state["pat_hist"]
-            metrics = st.session_state["pat_metrics"]
-            label = st.session_state.get("pat_label", "")
-            _show_u = st.session_state.get("pat_showu", False)
-
-            if _show_u:
-                fig = plot_gray_scott_final(hist.u_final, hist.v_final, title=label)
-                st.pyplot(fig, use_container_width=True)
-                _download_btn(fig, f"pattern_{label.lower().replace(' ','_')}_uv.png")
-                plt.close(fig)
-            else:
-                fig = plot_field(hist.v_final, title=f"{label}: v field", vmin=0, vmax=0.5)
-                st.pyplot(fig, use_container_width=True)
-                _download_btn(fig, f"pattern_{label.lower().replace(' ','_')}_v.png")
+                from chirality.visualization.style import BG, INK, BORDER
+                fig, ax = plt.subplots(figsize=(6, 5), facecolor=BG)
+                ax.set_facecolor("#FFFFFF")
+                im = ax.pcolormesh(x_vals, y_vals, grid, cmap="YlOrBr",
+                                   vmin=0, vmax=1, shading="nearest")
+                fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04).ax.tick_params(
+                    labelsize=8, colors=INK)
+                ax.set_title(f"{sweep_name.split(' — ')[1]}  [{metric_key}]",
+                             fontsize=11, color=INK)
+                ax.set_xlabel(
+                    "k_radial" if sweep_name.startswith("A") else
+                    "Dr" if sweep_name.startswith("B") else "Dh/Da",
+                    fontsize=10, color=INK,
+                )
+                ax.set_ylabel(
+                    "omega" if sweep_name.startswith("A") else
+                    "k_angular" if sweep_name.startswith("B") else "mu_h",
+                    fontsize=10, color=INK,
+                )
+                ax.tick_params(colors=INK, labelsize=8)
+                for sp in ax.spines.values():
+                    sp.set_edgecolor(BORDER)
+                fig.tight_layout()
+                st.pyplot(fig, use_container_width=False)
                 plt.close(fig)
 
-            _sci_caption(
-                "v-field (activator species). High v (bright) = high concentration. "
-                "Pattern strength = std(v). Near-zero strength = homogeneous state."
-            )
-            _rule()
-            _show_pattern_metrics(metrics)
-            _rule()
+    st.markdown("---")
+    st.markdown(interpretations[sweep_name])
 
-            with st.expander("Interpretation and sanity checks"):
-                st.markdown(summarize_pattern_metrics(metrics, label))
-                st.markdown(
-                    "\n**Sanity checks:**\n"
-                    "- High kill rate k should suppress v (near-homogeneous state)\n"
-                    "- No initial v means no pattern (check n_seeds)\n"
-                    "- Diffusion alone smooths gradients (run_diffusion preset in code)\n"
-                    "- Results should vary with seed -- run multiple seeds to confirm\n"
-                    "- Feed gradient LR asymmetry is physical (F varies left to right)\n"
-                    "- Chiral source asymmetry is small (~0.001-0.005) -- toy model only"
-                )
-        else:
-            st.markdown(
-                "<div style='text-align:center;color:#999;margin-top:4rem;'>"
-                "<p style='font-size:1.1rem;'>Select a preset and click Run.</p>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
+    _notice(
+        "Each cell in the heatmap is one simulation run at fixed parameters. "
+        "The 5x5 grid uses 150 agent steps and 1500 field steps for speed; "
+        "production presets use 400+ steps. Phase boundaries shift slightly at "
+        "higher resolution."
+    )
+
+    _limit(
+        "Short sweep runs (n_steps=150) may not reach steady state. "
+        "Treat boundary positions as qualitative, not quantitative."
+    )
 
 
-# ============================================================
-# Tab 4: Bridge Lab
-# ============================================================
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 4 — MOVIE GALLERY
+# ─────────────────────────────────────────────────────────────────────────────
 
-def tab_bridge_lab():
-    st.markdown("## Bridge Lab")
+def _tab_movie_gallery():
+    st.markdown("## Movie Gallery")
     st.markdown(
-        "The two tutorial models are different in mechanism but teach the same lesson. "
-        "Run both here to compare them side by side."
+        "These animations show the system evolving from initialization to steady state. "
+        "Each frame is one simulation snapshot."
     )
 
-    st.info(
-        "**The shared principle:**  \n"
-        "Local interactions with broken symmetry produce macroscopic spatial structure. "
-        "In particles, chirality drives edge currents. "
-        "In fields, a symmetry-breaking perturbation drives pattern asymmetry. "
-        "The models are not the same, but the logic is."
-    )
-
-    _rule()
-
-    col_l, col_r = st.columns(2)
-    with col_l:
-        st.markdown("#### Particle model")
-        p_model = st.selectbox(
-            "Comparison scenario",
-            [
-                "Chiral ABP vs ABP (no chirality)",
-                "Vicsek: ordered flock vs chiral flock",
-                "Edge current vs bulk gas",
-            ],
-            key="bridge_p_scenario",
-        )
-    with col_r:
-        st.markdown("#### Pattern model")
-        f_model = st.selectbox(
-            "Comparison scenario",
-            [
-                "Spots vs labyrinth (F/k variation)",
-                "Gradient: phase boundary across domain",
-                "Obstacle vs open field",
-            ],
-            key="bridge_f_scenario",
-        )
-
-    run_bridge = st.button("Run Bridge Comparison", type="primary", key="bridge_run")
-
-    if run_bridge:
-        with st.spinner("Running both simulations..."):
-            # Particle side
-            if p_model == "Chiral ABP vs ABP (no chirality)":
-                hist_A = simulate_chiral_abp(
-                    N=100, L=10.0, v0=0.5, Dr=0.2, omega=2.0, chirality_mode="right",
-                    dt=0.01, n_steps=400, seed=42, save_every=10,
-                )
-                hist_B = simulate_chiral_abp(
-                    N=100, L=10.0, v0=0.5, Dr=0.2, omega=0.0, chirality_mode="none",
-                    dt=0.01, n_steps=400, seed=42, save_every=10,
-                )
-                p_labels = ("Chiral ABP (omega=2)", "ABP (no chirality)")
-            elif p_model == "Vicsek: ordered flock vs chiral flock":
-                hist_A = simulate_vicsek_chiral(
-                    N=100, L=10.0, v0=0.5, R=1.0, eta=0.15, omega=0.0,
-                    dt=0.1, n_steps=300, seed=42, save_every=10,
-                )
-                hist_B = simulate_vicsek_chiral(
-                    N=100, L=10.0, v0=0.5, R=1.0, eta=0.15, omega=1.5,
-                    dt=0.1, n_steps=300, seed=42, save_every=10,
-                )
-                p_labels = ("Vicsek flock (omega=0)", "Chiral Vicsek (omega=1.5)")
-            else:
-                hist_A = simulate_chiral_abp(
-                    N=100, L=10.0, v0=0.5, Dr=0.3, omega=3.0, chirality_mode="right",
-                    dt=0.01, n_steps=500, seed=42, boundary_mode="circular_trap", save_every=10,
-                )
-                hist_B = simulate_chiral_abp(
-                    N=100, L=10.0, v0=0.5, Dr=0.3, omega=3.0, chirality_mode="right",
-                    dt=0.01, n_steps=500, seed=42, boundary_mode="periodic", save_every=10,
-                )
-                p_labels = ("Edge current (circular trap)", "Bulk periodic")
-
-            # Pattern side
-            if f_model == "Spots vs labyrinth (F/k variation)":
-                fhist_A = simulate_gray_scott(
-                    nx=64, ny=64, F=0.035, k=0.065, dt=1.0, n_steps=4000, seed=42,
-                    save_every=4000, n_seeds=8,
-                )
-                fhist_B = simulate_gray_scott(
-                    nx=64, ny=64, F=0.04, k=0.06, dt=1.0, n_steps=4000, seed=42,
-                    save_every=4000, n_seeds=6,
-                )
-                f_labels = ("Spots (F=0.035, k=0.065)", "Labyrinth (F=0.04, k=0.06)")
-            elif f_model == "Gradient: phase boundary across domain":
-                fhist_A = simulate_gray_scott(
-                    nx=64, ny=64, F=0.04, k=0.063, dt=1.0, n_steps=3000, seed=42,
-                    save_every=3000, n_seeds=6,
-                )
-                fhist_B = simulate_feed_gradient(
-                    nx=64, ny=64, F_left=0.015, F_right=0.055, k=0.063, dt=1.0,
-                    n_steps=3000, seed=42, save_every=3000, n_seeds=6,
-                )
-                f_labels = ("Uniform F", "Feed gradient (phase boundary)")
-            else:
-                fhist_A = simulate_gray_scott(
-                    nx=64, ny=64, F=0.035, k=0.065, dt=1.0, n_steps=4000, seed=42,
-                    save_every=4000, n_seeds=8,
-                )
-                fhist_B = simulate_obstacle(
-                    nx=64, ny=64, F=0.035, k=0.065, dt=1.0, n_steps=4000, seed=42,
-                    obstacle_r=0.15, save_every=4000, n_seeds=8,
-                )
-                f_labels = ("Open field", "Circular obstacle")
-
-            st.session_state["bridge"] = {
-                "hist_A": hist_A, "hist_B": hist_B, "p_labels": p_labels,
-                "fhist_A": fhist_A, "fhist_B": fhist_B, "f_labels": f_labels,
-            }
-
-    if "bridge" in st.session_state:
-        b = st.session_state["bridge"]
-        _rule()
-
-        # Particle row
-        st.markdown("#### Particle results")
-        col1, col2 = st.columns(2)
-        for col, hist, lbl in zip([col1, col2], [b["hist_A"], b["hist_B"]], b["p_labels"]):
-            with col:
-                fig = _particle_figure(hist, title=lbl)
-                st.pyplot(fig, use_container_width=True)
-                plt.close(fig)
-                m = compute_all_particle_metrics(hist)
-                st.caption(
-                    f"phi={m['polar_order_final']:.3f}  |  "
-                    f"swirl={m['swirl_index']:.3f}  |  "
-                    f"accum={m['boundary_accumulation']:.3f}"
-                )
-
-        _rule()
-
-        # Pattern row
-        st.markdown("#### Pattern results")
-        col3, col4 = st.columns(2)
-        for col, fhist, lbl in zip([col3, col4], [b["fhist_A"], b["fhist_B"]], b["f_labels"]):
-            with col:
-                fig = _pattern_figure(fhist, title=lbl)
-                st.pyplot(fig, use_container_width=True)
-                plt.close(fig)
-                m = compute_all_pattern_metrics(fhist)
-                st.caption(
-                    f"strength={m['pattern_strength']:.4f}  |  "
-                    f"clusters={m['n_clusters']}  |  "
-                    f"LR asym={m['field_asymmetry_lr']:.5f}"
-                )
-
-        _rule()
-
-        # Shared principles
-        st.markdown("#### What both models show")
-        pr1, pr2, pr3, pr4 = st.columns(4)
-        with pr1:
-            st.markdown(
-                "<div style='background:#FFFFFF;border:1px solid #DDD5C8;border-top:3px solid #C15A3A;"
-                "border-radius:4px;padding:0.8rem;'>"
-                "<strong>Local rules generate global structure</strong><br/>"
-                "<small>Each particle / each lattice site follows simple local equations. "
-                "Collective behavior emerges from interactions alone.</small>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-        with pr2:
-            st.markdown(
-                "<div style='background:#FFFFFF;border:1px solid #DDD5C8;border-top:3px solid #315C4C;"
-                "border-radius:4px;padding:0.8rem;'>"
-                "<strong>Symmetry breaking drives asymmetry</strong><br/>"
-                "<small>Chirality (omega) or a rotating source breaks a symmetry. "
-                "The system adopts a definite handedness.</small>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-        with pr3:
-            st.markdown(
-                "<div style='background:#FFFFFF;border:1px solid #DDD5C8;border-top:3px solid #C15A3A;"
-                "border-radius:4px;padding:0.8rem;'>"
-                "<strong>Noise competes with order</strong><br/>"
-                "<small>High rotational noise (Dr) or high angular noise (eta) destroys collective order. "
-                "In Gray-Scott, high kill rate (k) suppresses v entirely.</small>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-        with pr4:
-            st.markdown(
-                "<div style='background:#FFFFFF;border:1px solid #DDD5C8;border-top:3px solid #315C4C;"
-                "border-radius:4px;padding:0.8rem;'>"
-                "<strong>Obstacles reshape structure</strong><br/>"
-                "<small>A physical boundary (circular trap) confines edge currents. "
-                "A no-reaction zone disrupts pattern symmetry and creates topological defects.</small>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-
-# ============================================================
-# Tab 5: Phase Atlas
-# ============================================================
-
-def tab_phase_atlas():
-    st.markdown("## Phase Atlas")
-    st.markdown(
-        "Systematic parameter sweeps reveal which parts of parameter space produce "
-        "each type of collective behavior. These are coarse grids for exploration, "
-        "not final publication-quality numerics."
-    )
-
-    st.warning(
-        "Phase sweeps are computationally expensive. "
-        "Pregenerated data is loaded automatically if available in `outputs/phase_sweeps/`. "
-        "Use the buttons below to generate fresh sweeps in-browser (small grids for speed)."
-    )
-
-    _rule()
-
-    # Try loading pregenerated files first
-    pregen_particle = "outputs/phase_sweeps/particle_sweep_data.npz"
-    pregen_vicsek = "outputs/phase_sweeps/vicsek_sweep_data.npz"
-    pregen_pattern = "outputs/phase_sweeps/gray_scott_sweep_data.npz"
-    pregen_chiral = "outputs/phase_sweeps/chiral_source_sweep_data.npz"
-
-    def _try_load(path):
-        if os.path.exists(path):
-            try:
-                return load_phase_diagram_data(path)
-            except Exception:
-                return None
-        return None
-
-    p_data = _try_load(pregen_particle)
-    v_data = _try_load(pregen_vicsek)
-    gs_data = _try_load(pregen_pattern)
-    cs_data = _try_load(pregen_chiral)
-
-    has_pregen = any(x is not None for x in [p_data, v_data, gs_data, cs_data])
-    if has_pregen:
-        st.success(
-            f"Pregenerated sweep data found in `outputs/phase_sweeps/`. "
-            f"Loaded: "
-            + ", ".join(
-                n for n, d in [("particle", p_data), ("vicsek", v_data),
-                                ("gray_scott", gs_data), ("chiral_source", cs_data)]
-                if d is not None
-            )
-        )
-
-    # In-browser sweep buttons
-    col_btn1, col_btn2 = st.columns(2)
-    with col_btn1:
-        run_p_sweep = st.button(
-            "Run small particle sweep (5x5, ~30s)", key="pa_run_p",
-            help="5x5 grid, N=60, 150 steps/point"
-        )
-    with col_btn2:
-        run_gs_sweep = st.button(
-            "Run small pattern sweep (5x5, ~1-2 min)", key="pa_run_gs",
-            help="5x5 grid, 64x64, 1000 steps/point"
-        )
-
-    if run_p_sweep:
-        with st.spinner("Running particle sweep (5x5)..."):
-            p_data = _cached_particle_sweep(5, 60, 150)
-            st.session_state["pa_p_data"] = p_data
-            st.success("Particle sweep done.")
-
-    if run_gs_sweep:
-        with st.spinner("Running pattern sweep (5x5, ~1-2 min)..."):
-            gs_data = _cached_pattern_sweep(5, 64, 1000)
-            st.session_state["pa_gs_data"] = gs_data
-            st.success("Pattern sweep done.")
-
-    # Use session state as fallback
-    if p_data is None:
-        p_data = st.session_state.get("pa_p_data")
-    if gs_data is None:
-        gs_data = st.session_state.get("pa_gs_data")
-
-    _rule()
-
-    # Metric explanations
-    with st.expander("Metric definitions"):
-        st.markdown(
-            "**Polar order** phi = |mean(exp(i*theta))|. "
-            "phi=1: all particles point the same way. phi~0: random orientations.\n\n"
-            "**Swirl index**: average projection of velocity onto the tangent of a circle "
-            "centered in the box. Positive = counter-clockwise net rotation. "
-            "Near zero = no net circulation.\n\n"
-            "**Boundary accumulation**: fraction of particles within 0.5 length units "
-            "of any box wall. High = particles crowd near boundaries.\n\n"
-            "**Pattern strength**: std(v). Near zero = homogeneous state. "
-            "Typical values for spots: 0.08-0.15.\n\n"
-            "**Cluster count**: connected regions where v > 0.1. "
-            "Labyrinth: few large clusters. Spots: many small clusters."
-        )
-
-    # Display sweep results
-    if p_data is not None:
-        st.markdown("### Chiral ABP phase diagrams (Dr vs omega)")
-        col_a, col_b, col_c = st.columns(3)
-
-        with col_a:
-            fig = plot_phase_diagram(
-                p_data["noise_values"], p_data["chirality_values"],
-                p_data["polar_order"],
-                "Rotational noise Dr", "Chirality omega", "Polar order",
-                title="Polar Order", vmin=0, vmax=1,
-            )
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
-            _sci_caption("phi near 1 = collective alignment (flock).")
-
-        with col_b:
-            fig = plot_phase_diagram(
-                p_data["noise_values"], p_data["chirality_values"],
-                p_data["swirl_index"],
-                "Rotational noise Dr", "Chirality omega", "Swirl index",
-                title="Swirl Index", vmin=-1, vmax=1, cmap="RdBu",
-            )
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
-            _sci_caption("Red = net CW rotation. Blue = CCW. White = no net swirl.")
-
-        with col_c:
-            fig = plot_phase_diagram(
-                p_data["noise_values"], p_data["chirality_values"],
-                p_data["boundary_accumulation"],
-                "Rotational noise Dr", "Chirality omega", "Boundary accum.",
-                title="Boundary Accumulation", vmin=0, vmax=1, cmap="hot",
-            )
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
-            _sci_caption("High = particles crowd near walls.")
-
-        _rule()
-
-    if v_data is not None:
-        st.markdown("### Chiral Vicsek phase diagram (eta vs omega)")
-        col_v1, col_v2 = st.columns(2)
-        with col_v1:
-            fig = plot_phase_diagram(
-                v_data["eta_values"], v_data["chirality_values"],
-                v_data["polar_order"],
-                "Alignment noise eta", "Chirality omega", "Polar order",
-                title="Vicsek: Polar Order", vmin=0, vmax=1,
-            )
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
-            _sci_caption("Low eta, low omega = high flocking order.")
-
-        with col_v2:
-            fig = plot_phase_diagram(
-                v_data["eta_values"], v_data["chirality_values"],
-                v_data["swirl_index"],
-                "Alignment noise eta", "Chirality omega", "Swirl index",
-                title="Vicsek: Swirl Index", vmin=-1, vmax=1, cmap="RdBu",
-            )
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
-            _sci_caption("Chirality competes with alignment.")
-
-        _rule()
-
-    if gs_data is not None:
-        st.markdown("### Gray-Scott phase diagram (F vs k)")
-        col_g1, col_g2 = st.columns(2)
-        with col_g1:
-            fig = plot_phase_diagram(
-                gs_data["F_values"], gs_data["k_values"],
-                gs_data["pattern_strength"],
-                "Feed rate F", "Kill rate k", "Pattern strength",
-                title="Pattern Strength",
-            )
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
-            _sci_caption("Bright = high pattern formation (spots or stripes).")
-
-        with col_g2:
-            fig = plot_phase_diagram(
-                gs_data["F_values"], gs_data["k_values"],
-                gs_data["n_clusters"],
-                "Feed rate F", "Kill rate k", "Cluster count",
-                title="Cluster Count", cmap="plasma",
-            )
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
-            _sci_caption("Many clusters = spot-like regime.")
-
-        _rule()
-
-    if cs_data is not None:
-        st.markdown("### Chiral source phase diagram (rotation speed vs F)")
-        st.markdown(
-            "*Toy model only. The asymmetry values are small (~0.001-0.005) and "
-            "should not be over-interpreted.*"
-        )
-        fig = plot_phase_diagram(
-            cs_data["source_omega_values"], cs_data["F_values"],
-            cs_data["field_asymmetry"],
-            "Source rotation speed", "Feed rate F", "|LR asymmetry|",
-            title="Chiral Source: Pattern Asymmetry", cmap="inferno",
-        )
-        st.pyplot(fig, use_container_width=True)
-        plt.close(fig)
-        _sci_caption(
-            "Faster rotation + intermediate F tends to produce larger LR asymmetry in the v field."
-        )
-
-    if p_data is None and gs_data is None and v_data is None and cs_data is None:
-        st.markdown(
-            "<div style='text-align:center;color:#999;margin-top:3rem;'>"
-            "<p>No pregenerated data found. Run the sweep buttons above, "
-            "or run <code>python scripts/run_phase_sweeps.py</code> first.</p>"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-
-# ============================================================
-# Tab 6: Presentation Mode
-# ============================================================
-
-def _slide(number, title, body, notes=""):
-    border_color = "#C15A3A" if number % 2 == 1 else "#315C4C"
-    st.markdown(
-        f"<div style='background:#FFFFFF;border:1.5px solid #DDD5C8;"
-        f"border-left:5px solid {border_color};border-radius:4px;"
-        f"padding:1.5rem 1.8rem;margin-bottom:1.2rem;'>"
-        f"<p style='color:#888;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;"
-        f"margin:0 0 0.4rem 0;'>Slide {number}</p>"
-        f"<h2 style='color:#1F2421;border:none;margin:0 0 0.8rem 0;'>{title}</h2>"
-        f"{body}"
-        f"</div>",
-        unsafe_allow_html=True,
-    )
-    if notes:
-        with st.expander(f"Speaker notes: Slide {number}"):
-            st.markdown(notes)
-
-
-def tab_presentation_mode():
-    st.markdown("## Presentation Mode")
-    st.markdown(
-        "A scrollable 5-slide story. Each slide corresponds to a section of the live demo. "
-        "Speaker notes are in the expandable sections below each slide."
-    )
-
-    _rule()
-
-    _slide(
-        1,
-        "Can microscopic handedness reshape living matter?",
-        """
-        <p>Biological systems are pervaded by chirality. Bacteria swim in helical paths
-        from the shape of their flagella. Developing embryos break left-right symmetry
-        to place the heart on the correct side. Snail shells coil in a fixed direction.
-        Cilia beat in coordinated, chiral waves.</p>
-        <p>This project asks a minimal computational version of the question:
-        if we give simulated particles or chemical fields a sense of handedness,
-        what changes at macroscopic scales?</p>
-        <p><strong>Answer preview:</strong>
-        In particle models, chirality produces edge currents. In field models,
-        a chiral source produces pattern asymmetry. Both effects are measurable.</p>
-        """,
-        notes=(
-            "Opening hook: connect to biological motivation. Show the overview tab. "
-            "State clearly that this is computational physics, not a claim about specific organisms. "
-            "30-45 seconds."
+    movies = [
+        (
+            os.path.join("outputs", "movies", "star_formation_clean.gif"),
+            "Clean star formation (omega = 0)",
+            "Watch the arms self-organize. At t=0 agents are in initial arm groups "
+            "with small random offsets. By the final frame they have settled into "
+            "radial lobes at r_target. Radial spring drives them outward; "
+            "angular repulsion pushes arms apart.",
         ),
-    )
-
-    _slide(
-        2,
-        "Two tutorial models, one scientific question",
-        """
-        <p><strong>Track 1: Particle active matter</strong><br/>
-        Each particle self-propels at speed v0 and diffuses in orientation at rate Dr.
-        Standard ABP: no order, no chirality.
-        Chiral extension: add omega*dt to the orientation update.
-        Vicsek extension: add local alignment plus chirality.</p>
-        <p><strong>Track 2: Pattern formation</strong><br/>
-        Gray-Scott reaction-diffusion: two chemical species that react and diffuse.
-        Feed and kill rates (F, k) determine the pattern regime.
-        Extensions: feed gradient, circular obstacle, rotating source.</p>
-        <p><strong>Connection:</strong>
-        Both models are minimal, parameter-controlled, and produce emergent macroscopic structure
-        from local rules. Chirality is the symmetry-breaking knob in both.</p>
-        """,
-        notes=(
-            "Explain the tutorials briefly. Show the two preview images from the Overview tab. "
-            "Emphasize that this is a direct response to the mini-challenges in both tutorials. "
-            "60-75 seconds."
+        (
+            os.path.join("outputs", "movies", "chiral_twist_emergence.gif"),
+            "Chiral twist emergence (omega = 2.5)",
+            "Same initialization, but with a nonzero rotation rate (omega). "
+            "The arms slowly rotate CCW over time. Compare the final arm angles "
+            "to the clean case — they are rotated by omega * t. "
+            "This is the model's analog of biological chirality.",
         ),
-    )
-
-    _slide(
-        3,
-        "Baseline reproduction: tutorials in code",
-        """
-        <ul>
-        <li><strong>ABP baseline:</strong> polar order near 0 at high noise -- gas phase, as expected.</li>
-        <li><strong>Vicsek flocking:</strong> polar order near 0.95 at eta=0.15 -- flock, as expected.</li>
-        <li><strong>Gray-Scott spots:</strong> F=0.035, k=0.065 produces self-organized spots.</li>
-        <li><strong>Gray-Scott labyrinth:</strong> F=0.04, k=0.06 produces labyrinthine stripes.</li>
-        <li><strong>Feed gradient:</strong> F varying left-to-right creates a phase boundary visible in the field.</li>
-        </ul>
-        <p>These match established results from the literature and tutorial.
-        The code is a correct implementation of the tutorial models.</p>
-        """,
-        notes=(
-            "Show the Particle Lab and Pattern Lab tabs. "
-            "Run ABP baseline: show polar order near 0. "
-            "Run Vicsek: show polar order near 0.95. "
-            "Show Gray-Scott spots and labyrinth images from outputs/demo/. "
-            "Total: 90 seconds."
+        (
+            os.path.join("outputs", "movies", "phase_transition_parameter_sweep.gif"),
+            "Phase transition: omega 0 to 5",
+            "Each frame shows a different omega value. At omega=0 the pattern "
+            "is radial and static. As omega increases, arms begin to smear and "
+            "eventually lose coherence at omega=5. The transition is gradual — "
+            "there is no sharp phase boundary at this agent density.",
         ),
-    )
-
-    _slide(
-        4,
-        "Creative extension: chirality, obstacles, sources",
-        """
-        <p><strong>Chiral ABP (particle track):</strong>
-        Adding omega=2.0 to ABP creates circular swimming orbits.
-        In a circular trap, particles self-organize into a persistent edge current
-        measurable by the swirl index.
-        Racemic mixtures (half left, half right) show near-zero swirl --
-        the two populations cancel.</p>
-        <p><strong>Phase diagram:</strong>
-        Sweeping Dr vs omega shows that chirality and noise compete.
-        Low noise + high omega = strong swirl. High noise destroys it.</p>
-        <p><strong>Chiral source (pattern track, toy model):</strong>
-        A rotating injection point orbits the center of the Gray-Scott simulation.
-        Left-right asymmetry increases from ~0.0001 (no source) to ~0.002-0.005 (omega=0.1).
-        Effect is small but reproducible across seeds at constant parameters.</p>
-        """,
-        notes=(
-            "This is the core of the hackathon contribution. "
-            "Show the Phase Atlas swirl index heatmap. "
-            "Show the chiral_vortex_gas.gif or boundary_edge_current.gif from outputs/videos/. "
-            "Show chiral_source_pattern vs gray_scott_spots side by side. "
-            "Be clear that the chiral source is a toy model. "
-            "90-120 seconds."
+        (
+            os.path.join("outputs", "movies", "active_zooid_dynamics.gif"),
+            "Single-center zoom: active zooid dynamics",
+            "Zoomed into one star center. Individual agents jitter due to "
+            "rotational noise (Dr=0.04). The radial spring prevents them from "
+            "escaping; angular repulsion maintains arm separation. "
+            "Notice that arms are not rigid — they fluctuate around their "
+            "equilibrium angles.",
         ),
-    )
-
-    _slide(
-        5,
-        "Biological meaning and limitations",
-        """
-        <p><strong>What we can claim:</strong></p>
-        <ul>
-        <li>Chirality acts as a control knob in particle models -- clearly demonstrated.</li>
-        <li>A chiral source introduces detectable pattern asymmetry in Gray-Scott -- demonstrated as a toy model.</li>
-        <li>Both effects arise from the same principle: broken symmetry propagates to macroscopic structure.</li>
-        </ul>
-        <p><strong>What we cannot claim:</strong></p>
-        <ul>
-        <li>The omega parameter maps to any specific microswimmer without calibration.</li>
-        <li>The chiral source models any specific signaling pathway in biology.</li>
-        <li>The Gray-Scott equations describe any particular biochemical system quantitatively.</li>
-        </ul>
-        <p><strong>Next steps:</strong>
-        Hydrodynamic coupling. Comparison to experimental microswimmer data.
-        A biologically motivated chiral source (e.g., Nodal signaling gradient).
-        Ensemble averaging for statistical rigor.</p>
-        """,
-        notes=(
-            "End with honest science. Don't oversell. "
-            "The hackathon judges are scientists -- they respect careful language. "
-            "Briefly mention that all code is reproducible (fixed seeds, smoke test passes). "
-            "Offer to demo any tab. "
-            "30-45 seconds."
-        ),
-    )
-
-    _rule()
-
-    # File list
-    with st.expander("Exact output files to show during live demo"):
-        st.markdown(
-            "```\n"
-            "outputs/demo/baseline_active_brownian.png\n"
-            "outputs/demo/vicsek_flocking.png\n"
-            "outputs/demo/chiral_vortex_gas.png\n"
-            "outputs/demo/boundary_edge_current.png\n"
-            "outputs/demo/racemic_competition.png\n"
-            "outputs/demo/gray_scott_spots.png\n"
-            "outputs/demo/gray_scott_labyrinth.png\n"
-            "outputs/demo/feed_gradient_pattern.png\n"
-            "outputs/demo/obstacle_disrupted_pattern.png\n"
-            "outputs/demo/chiral_source_pattern.png\n"
-            "outputs/phase_sweeps/particle_swirl_index.png\n"
-            "outputs/phase_sweeps/pattern_strength_F_k.png\n"
-            "outputs/videos/chiral_vortex_gas.gif\n"
-            "outputs/videos/boundary_edge_current.gif\n"
-            "outputs/videos/gray_scott_growth.gif\n"
-            "```\n"
-        )
-
-    with st.expander("Backup demo plan (if live simulation fails)"):
-        st.markdown(
-            "1. Open `outputs/demo/*.png` directly in a file viewer.\n"
-            "2. Open `outputs/videos/*.gif` for animations.\n"
-            "3. Open `notebooks/Chirality_Atlas_Colab.ipynb` in Colab (pre-run all cells).\n"
-            "4. Fall back to the Phase Atlas tab which loads pregenerated .npz files.\n"
-            "5. If Streamlit fails entirely: use Jupyter and `%matplotlib inline`.\n"
-        )
-
-
-# ============================================================
-# Tab 7: Methods and Limits
-# ============================================================
-
-def tab_methods():
-    st.markdown("## Methods and Limits")
-
-    st.markdown("### Particle model equations")
-
-    with st.expander("Active Brownian Particle (ABP)", expanded=True):
-        st.latex(
-            r"\theta_i(t + \Delta t) = \theta_i(t) + \sqrt{2 D_r \Delta t}\, \xi_i(t)"
-        )
-        st.latex(
-            r"\mathbf{r}_i(t + \Delta t) = \mathbf{r}_i(t) + v_0 \begin{pmatrix} \cos\theta_i \\ \sin\theta_i \end{pmatrix} \Delta t"
-        )
-        st.markdown(
-            "**Parameters:** v0 = self-propulsion speed, Dr = rotational diffusivity.  \n"
-            "**xi** is a standard normal random variable, independent per particle and time step.  \n"
-            "No alignment interaction. Particles are non-interacting except through boundaries."
-        )
-
-    with st.expander("Chiral ABP extension"):
-        st.latex(
-            r"\theta_i(t + \Delta t) = \theta_i(t) + \omega_i \Delta t + \sqrt{2 D_r \Delta t}\, \xi_i(t)"
-        )
-        st.markdown(
-            "**omega_i** is the per-particle rotation rate. omega > 0 = right-handed (clockwise in standard coords).  \n"
-            "Chirality modes: *none* (omega=0), *right* (+|omega|), *left* (-|omega|), "
-            "*racemic* (half each), *random* (N(0, |omega|)).  \n"
-            "The radius of the circular orbit is R_c = v0 / |omega|."
-        )
-
-    with st.expander("Vicsek model with chirality"):
-        st.latex(
-            r"\bar{\theta}_i = \mathrm{atan2}\!\left(\sum_{|r_{ij}|<R}\sin\theta_j,\; \sum_{|r_{ij}|<R}\cos\theta_j\right)"
-        )
-        st.latex(
-            r"\theta_i(t + \Delta t) = \bar{\theta}_i + \omega_i \Delta t + \eta \, U[-\pi, \pi]"
-        )
-        st.markdown(
-            "**R** = alignment radius. **eta** = noise amplitude.  \n"
-            "Distances use the minimum-image convention for periodic boundaries.  \n"
-            "Chirality competes with alignment: high omega reduces polar order."
-        )
-
-    _rule()
-    st.markdown("### Pattern formation equations")
-
-    with st.expander("Gray-Scott model", expanded=True):
-        st.latex(
-            r"\frac{\partial u}{\partial t} = D_u \nabla^2 u - uv^2 + F(1-u)"
-        )
-        st.latex(
-            r"\frac{\partial v}{\partial t} = D_v \nabla^2 v + uv^2 - (F+k)v"
-        )
-        st.markdown(
-            "**u** = substrate species (feed F, consumed by reaction).  \n"
-            "**v** = activator species (created by reaction, removed at rate F+k).  \n"
-            "**Du > Dv** required for Turing instability.  \n"
-            "Discretized with explicit Euler (dt=1, dx=1) and periodic Laplacian via `np.roll`.  \n"
-            "Stability requires Du * dt / dx^2 < 0.25 in 2D."
-        )
-
-    with st.expander("Feed gradient and obstacle extensions"):
-        st.markdown(
-            "**Feed gradient:** F(x) = F_left + (F_right - F_left) * x/L.  \n"
-            "Different x-regions fall in different Gray-Scott parameter regimes, "
-            "creating a macroscopic phase boundary.  \n\n"
-            "**Circular obstacle:** inside a circle of radius R_obs, "
-            "u=1 and v=0 are enforced after each step. "
-            "The reaction cannot occur there."
-        )
-
-    with st.expander("Chiral source (toy model)"):
-        st.latex(
-            r"v \mathrel{+}= S \exp\!\left(-\frac{|\mathbf{r} - \mathbf{r}_s(t)|^2}{2\sigma^2}\right) \Delta t"
-        )
-        st.latex(
-            r"\mathbf{r}_s(t) = \left(0.5L + r_{orbit}\cos(\Omega t),\; 0.5L + r_{orbit}\sin(\Omega t)\right)"
-        )
-        st.markdown(
-            "**S** = source strength. **Omega** = angular speed of the focal point.  \n"
-            "This is a phenomenological construction, not derived from biology. "
-            "It injects v-species at a rotating location, breaking left-right symmetry.  \n"
-            "**Not a model of any specific organism.**"
-        )
-
-    _rule()
-    st.markdown("### Metrics")
-
-    col_m1, col_m2 = st.columns(2)
-    with col_m1:
-        st.markdown(
-            "**Polar order phi**  \n"
-            r"phi = |mean(exp(i*theta))| = sqrt(mean(cos theta)^2 + mean(sin theta)^2)"
-            "\n\nRange [0,1]. phi=1 means all particles point the same way (flock).  \n\n"
-            "**Swirl index**  \n"
-            "Average dot product of particle velocity direction with the tangent to a circle "
-            "around the box center. Positive = CCW, negative = CW.  \n\n"
-            "**Boundary accumulation**  \n"
-            "Fraction of particles within 0.5 units of any wall."
-        )
-    with col_m2:
-        st.markdown(
-            "**Pattern strength**  \n"
-            "std(v). Near zero = homogeneous state. 0.10-0.15 = well-developed spots or stripes.  \n\n"
-            "**Cluster count**  \n"
-            "Connected regions where v > 0.1 (scipy.ndimage.label). "
-            "Few large = labyrinths. Many small = spots.  \n\n"
-            "**LR asymmetry**  \n"
-            "mean(v[x > L/2]) - mean(v[x < L/2]). "
-            "Near zero for symmetric patterns. "
-            "Nonzero if chiral source or feed gradient biases one side."
-        )
-
-    _rule()
-    st.markdown("### LLM workflow")
-
-    st.markdown(
-        "Following the tutorial's prompt-run-test-modify-critique cycle:  \n\n"
-        "1. **Prompt** a specific, narrow change ('add omega_i * dt to orientation update').  \n"
-        "2. **Run** the modified code and check output.  \n"
-        "3. **Test** that outputs are finite and physically sensible.  \n"
-        "4. **Modify** if something is wrong or unexpected.  \n"
-        "5. **Critique** the result -- does it match known physics? Are the claims supported?  \n\n"
-        "See `docs/prompt_log.md` for a full record of the prompts used to build this project."
-    )
-
-    _rule()
-    st.markdown("### Known limitations")
-
-    lims = [
-        ("O(N^2) scaling",
-         "Vicsek neighbor search and soft repulsion loop over all pairs. "
-         "Practical limit N ~ 400. Real-scale simulations use spatial data structures (cell lists)."),
-        ("Explicit Euler instability",
-         "Gray-Scott uses explicit Euler with dt=1.0. Stable at default parameters but "
-         "will blow up for large Du or large dt. Check Du * dt / dx^2 < 0.25."),
-        ("Chiral source is a toy model",
-         "The rotating injection source is a phenomenological construction. "
-         "It has no established connection to any biological signaling pathway."),
-        ("MSD with periodic boundaries",
-         "MSD underestimates displacement once particles travel more than L/2. "
-         "Unwrapped trajectories would fix this but are not implemented."),
-        ("Phase diagrams are coarse",
-         "Default sweep grids are 6x6 with short run times. "
-         "Fine-grained phase boundaries require denser grids and longer equilibration."),
-        ("No hydrodynamics",
-         "Particles do not interact through the fluid. Real microswimmers have "
-         "long-range hydrodynamic interactions that can qualitatively change collective behavior."),
-        ("Finite-size effects",
-         "All simulations use finite box sizes. Phase boundaries shift with box size. "
-         "Results should not be extrapolated to the thermodynamic limit."),
     ]
 
-    for title, body in lims:
-        with st.expander(title):
-            st.markdown(body)
+    col_a, col_b = st.columns(2, gap="large")
+    for i, (path, title, caption) in enumerate(movies):
+        col = col_a if i % 2 == 0 else col_b
+        with col:
+            st.markdown(f"**{title}**")
+            _show_gif_safe(path)
+            _notice(caption)
+            st.markdown("---")
 
-
-# ============================================================
-# App header + main layout
-# ============================================================
-
-def main():
-    # Compact top header (tabs take most space)
-    svg_logo = _load_svg(os.path.join("assets", "logo.svg"))
-    header_html = (
-        f"<div style='display:flex;align-items:center;gap:10px;padding:0.4rem 0 0.6rem 0;'>"
-        f"<div style='width:36px;height:36px;flex-shrink:0;'>{svg_logo}</div>"
-        f"<div>"
-        f"<span style='font-size:1.25rem;font-weight:700;color:#1F2421;font-family:Georgia,serif;'>"
-        f"Chirality Atlas</span>"
-        f"<span style='font-size:0.85rem;color:#888;font-style:italic;margin-left:10px;'>"
-        f"Particles, patterns, and handedness in active matter.</span>"
-        f"</div></div>"
+    st.info(
+        "GIFs were generated by `scripts/04_make_movies.py` using Pillow. "
+        "Each GIF is 16 frames at 6 fps (or 8 frames at 2 fps for the sweep). "
+        "If they appear as static images, try opening the GIF file directly."
     )
-    st.markdown(header_html, unsafe_allow_html=True)
-
-    tabs = st.tabs([
-        "Overview",
-        "Particle Lab",
-        "Pattern Lab",
-        "Bridge Lab",
-        "Phase Atlas",
-        "Presentation",
-        "Methods & Limits",
-    ])
-
-    with tabs[0]:
-        tab_overview()
-    with tabs[1]:
-        tab_particle_lab()
-    with tabs[2]:
-        tab_pattern_lab()
-    with tabs[3]:
-        tab_bridge_lab()
-    with tabs[4]:
-        tab_phase_atlas()
-    with tabs[5]:
-        tab_presentation_mode()
-    with tabs[6]:
-        tab_methods()
 
 
-if __name__ == "__main__":
-    main()
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 5 — MODEL LIBRARY
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _tab_model_library():
+    st.markdown("## Model Library")
+    st.markdown(
+        "Six reference models inform the star ascidian simulation. "
+        "Each was implemented, tested, and analyzed as part of the project."
+    )
+
+    models = [
+        {
+            "name": "Fisher-KPP",
+            "mechanism": (
+                "Logistic growth + diffusion. A population front spreads "
+                "from an initial seed. The front speed is c = 2 * sqrt(D*r)."
+            ),
+            "produces": "Invasion fronts; traveling waves; spatial spread.",
+            "role": (
+                "Establishes the baseline: diffusion alone generates ordered "
+                "spatial structure. The front radius metric informed our "
+                "r_target design for zooid agent confinement."
+            ),
+            "image": os.path.join("outputs", "reference", "fisher_kpp_front.png"),
+        },
+        {
+            "name": "Gierer-Meinhardt",
+            "mechanism": (
+                "Short-range activation, long-range inhibition. "
+                "Turing instability when Dh >> Da produces periodic spots. "
+                "Spot spacing ~ sqrt(Dh/Da)."
+            ),
+            "produces": "Quasi-periodic spots; stripes; labyrinths depending on parameters.",
+            "role": (
+                "Directly used as Layer 1. The activator peaks become star center "
+                "positions. The Dh/Da ratio controls how many centers appear, "
+                "providing top-down spatial organization without explicit "
+                "center-placement rules."
+            ),
+            "image": os.path.join("outputs", "reference", "gierer_meinhardt_spots.png"),
+        },
+        {
+            "name": "Cahn-Hilliard",
+            "mechanism": (
+                "Phase separation via spinodal decomposition. "
+                "phi_t = M * lap(mu); mu = -A*phi + B*phi^3 - kappa*lap(phi). "
+                "Coarsening proceeds as t^{1/3}."
+            ),
+            "produces": "Phase-separated domains; bicontinuous spinodal patterns; coarsening.",
+            "role": (
+                "Inspired the spectral semi-implicit numerical scheme used for "
+                "GM. The correct IMEX denominator sign (negative A*k2 term) "
+                "was derived by analogy with the CH stability analysis."
+            ),
+            "image": os.path.join("outputs", "reference", "cahn_hilliard_domains.png"),
+        },
+        {
+            "name": "FitzHugh-Nagumo",
+            "mechanism": (
+                "Excitable activator-inhibitor. Fast u variable, slow v variable. "
+                "Spiral waves form in 2D when initialized with spatial gradient "
+                "(spiral init)."
+            ),
+            "produces": "Excitable pulses; spiral waves; target patterns.",
+            "role": (
+                "Motivated the IMEX approach: FHN also requires implicit diffusion "
+                "for stability at N=64. The spiral init design (vs stimulate) "
+                "illustrated the importance of initial conditions in periodic domains."
+            ),
+            "image": os.path.join("outputs", "reference", "fitzhugh_nagumo_spiral.png"),
+        },
+        {
+            "name": "Gray-Scott",
+            "mechanism": (
+                "Two-component reaction-diffusion. u is substrate, v is product. "
+                "u*v^2 autocatalysis with feed F and kill k determines pattern type."
+            ),
+            "produces": "Spots, labyrinths, traveling waves depending on (F, k) region.",
+            "role": (
+                "Alternative to GM for center field generation. Used as fallback "
+                "when GM fails to produce well-separated spots. Its (F, k) phase "
+                "diagram informed the design of the GM parameter sweep structure."
+            ),
+            "image": os.path.join("outputs", "reference", "gray_scott_pattern.png"),
+        },
+        {
+            "name": "Active Particles",
+            "mechanism": (
+                "Self-propelled particles (ABP). Orientation diffuses (Dr), "
+                "optionally with rotation rate omega (chiral ABP). "
+                "Vicsek model adds velocity alignment."
+            ),
+            "produces": "Polar flocking, chiral vortex clusters, motility-induced phase separation.",
+            "role": (
+                "Directly used as Layer 2. The omega parameter from chiral ABP "
+                "becomes the arm rotation rate. The swirl_score metric is adapted "
+                "from the ABP swirl_index. Excluded volume prevents arm collapse."
+            ),
+            "image": os.path.join("outputs", "reference", "chiral_active_particles.png"),
+        },
+    ]
+
+    for i in range(0, len(models), 2):
+        c1, c2 = st.columns(2, gap="large")
+        for col, model in zip([c1, c2], models[i:i + 2]):
+            with col:
+                with st.expander(f"**{model['name']}**", expanded=(i == 0)):
+                    st.markdown(f"**Mechanism:** {model['mechanism']}")
+                    st.markdown(f"**Produces:** {model['produces']}")
+                    st.markdown(
+                        f"<div style='background:#EAF0EC;border-left:3px solid #315C4C;"
+                        f"padding:0.4rem 0.7rem;margin:0.4rem 0;font-size:0.87rem'>"
+                        f"<strong>Role in project:</strong> {model['role']}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    _show_image_safe(model["image"])
+
+    st.markdown("---")
+    _notice(
+        "Each model was implemented with a production-quality IMEX numerical scheme "
+        "(implicit diffusion in Fourier space). This was the main numerical challenge: "
+        "explicit Euler diffusion is unstable when dt > dx^2/(4D). "
+        "At N=64 with Dh=5.0 the explicit stability limit is dt < 0.002, "
+        "but the IMEX scheme is unconditionally stable for the diffusion term."
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 6 — LLM LAB NOTEBOOK
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _tab_llm_notebook():
+    st.markdown("## LLM Lab Notebook")
+    st.markdown(
+        "This tab documents how LLM assistance was used in the project — "
+        "including the surprising contributions, the human judgment calls, "
+        "and the cases where it went wrong."
+    )
+
+    st.markdown("### Workflow Overview")
+    st.markdown(
+        """
+The project followed an iterative loop:
+
+1. **Ideation** — human described biological target; LLM proposed candidate model classes
+2. **Code generation** — LLM wrote initial implementations of 6 reference models
+3. **Debugging** — numerical instability caught by smoke test; LLM diagnosed root cause
+4. **Metric design** — LLM proposed anti-cheat metrics when visual inspection was unreliable
+5. **Documentation** — LLM wrote docstrings, technical notes, and this app
+
+At every step, the human ran the code, inspected outputs, and made the scientific judgments.
+        """
+    )
+
+    st.markdown("---")
+    st.markdown("### Two Surprising LLM Contributions")
+
+    with st.expander("A: Two-layer architecture (proposed by LLM)", expanded=True):
+        st.markdown(
+            """
+**The problem:** Initial concept was a single-layer model — active particles around
+randomly placed centers, with no field-based center placement.
+
+**What LLM proposed:** Separate the model into two layers with different timescales:
+a slow reaction-diffusion field to set positional information (colony-level organization),
+and a fast local agent dynamics to form arm morphology (zooid-level organization).
+The LLM cited the biological analogy: Botryllus development has both a blastogenic
+cycle (slow, colony-level) and individual zooid growth (fast, local).
+
+**Why it worked:** The separation of scales is physically principled and matches the
+biological reality. The GM field provides quasi-regular center spacing without
+requiring explicit distance rules between agents. The agent layer can be fully
+local while still producing globally regular patterns.
+
+**Human verification:** Ran both versions. Single-layer version produced irregular
+center spacing unless we added an explicit center-repulsion rule (which is ad hoc).
+Two-layer version produced regular spacing automatically from the Turing mechanism.
+        """
+        )
+
+    with st.expander("B: Anti-cheat metrics (designed with LLM)", expanded=True):
+        st.markdown(
+            """
+**The problem:** Early simulations looked like stars in a screenshot but metrics
+gave low scores, or looked wrong but metrics gave high scores. Visual inspection
+was not enough.
+
+**What LLM proposed:** A hierarchy of metrics designed to catch specific failure modes:
+
+- `radial_order_score`: catches models that produce agents everywhere but not at r_target
+- `arm_count_distribution`: uses `find_peaks` on the angular histogram — catches models
+  that produce a ring (high radial order) but not discrete arms
+- `angular_uniformity_score`: catches models that produce arms but at uneven angles
+- `swirl_score`: specifically detects the chiral signature — can't be faked by
+  a radially-symmetric pattern
+- `fragmentation_score`: catches cases where the pattern looks OK at the center
+  but many agents have escaped (high-noise regime)
+
+**Human verification:** Ran the metric suite on a uniform ring initialization
+(all agents at r_target, no angular structure). Radial order = 1.0, arm count = 0.
+The radial_order check alone would have given a false positive; arm count catches it.
+        """
+        )
+
+    st.markdown("---")
+    st.markdown("### What the Human Decided")
+
+    st.markdown(
+        """
+**Equations:** The specific GM and agent force equations were human choices
+based on standard active matter and RD literature. LLM provided implementations
+of equations the human specified; it did not derive them independently.
+
+**Biological scope:** LLM-generated descriptions were often too specific
+("models Botryllus blastogenic cycle"). These were corrected to "reproduces the
+spatial geometry" — a weaker, defensible claim.
+
+**Parameter values:** All parameter values (Dh/Da=100, n_arms=7, r_target=1.5, etc.)
+were tuned by the human inspecting output images. LLM suggested search ranges
+but did not determine the values.
+
+**Sanity checks:** Numerical stability analysis (dt < dx^2/(4D) criterion),
+compileall verification, and the 53-check smoke test were written by the human
+after LLM code passed visual inspection but had subtle instabilities at N=64.
+
+**Limitations section:** All biological caveats (no blastogenic staging, no
+immune recognition, no 3D mechanics) were added by the human. LLM tended to
+omit these unless explicitly asked.
+        """
+    )
+
+    st.markdown("---")
+    st.markdown("### Failure Gallery")
+
+    col_a, col_b = st.columns(2, gap="large")
+
+    with col_a:
+        st.markdown("**Failure 1: Uniform ring — no arms**")
+        st.markdown(
+            "Initialization with all agents at r_target uniformly in angle, "
+            "no arm grouping. Radial order = 1.0, but arm count = 0-1. "
+            "Visually looks like a circle, not a star. "
+            "Fix: initialize in discrete arm groups."
+        )
+        _show_image_safe(
+            os.path.join("outputs", "star_ascidian", "noisy_fragmented_systems.png"),
+            caption="High-noise regime: agents escape arms (fragmentation_score > 0.4)",
+        )
+
+    with col_b:
+        st.markdown("**Failure 2: GM without Turing instability**")
+        st.markdown(
+            "With Dh/Da = 3 (below threshold), the GM field converges to a "
+            "uniform activator concentration. No centers form. Agents initialize "
+            "around the fallback grid center and produce a single-star pattern. "
+            "Star-likeness with K=1 is meaningless for colony modeling."
+        )
+        _show_image_safe(
+            os.path.join("outputs", "star_ascidian", "overcrowded_merged_systems.png"),
+            caption="Overcrowded: too many agents per arm; stars merge (merge_score > 0.2)",
+        )
+
+    st.markdown("---")
+    st.markdown("### The Iteration Loop in Practice")
+
+    with st.expander("Show code-level workflow"):
+        st.code(
+            """
+# Iteration 1: explicit Euler diffusion — blew up at N=64
+# Symptom: u_final = nan after ~100 steps
+# Diagnosis: dt=0.1 >> dt_max=0.002 for Dh=5, N=64
+# Fix: IMEX scheme (implicit diffusion in Fourier space)
+
+# denom_a = 1 + dt*(Da*k2 + mu_a)   <-- implicit D and decay
+# u_hat = fft2(u + dt*reaction_u) / denom_a
+
+# Iteration 2: Cahn-Hilliard wrong sign — no phase separation
+# Symptom: domain_size_proxy = 0 after 2000 steps
+# Diagnosis: denom = 1 + dt*M*A*k2 suppresses A*phi (destabilizing term)
+# Fix: denom = 1 - dt*M*A*k2 + dt*M*kappa*k2**2
+
+# Iteration 3: FHN wave_activity = 0 — no excitation
+# Symptom: spiral init works but stimulate init fails
+# Diagnosis: implicit diffusion spreads corner energy over whole periodic domain
+#            before threshold is reached; spatial average stays below u_rest
+# Fix: use spiral init by default
+
+# Verification at every step:
+#   python scripts/06_final_smoke_test.py  (53 checks, all PASS)
+#   python -m compileall src scripts
+            """,
+            language="python",
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 7 — PRESENTATION MODE
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _tab_presentation():
+    st.markdown("## Presentation Mode")
+    st.markdown(
+        "Everything needed for the 5-minute judging session. "
+        "Files are listed with paths relative to repo root."
+    )
+
+    st.markdown("### 5-Slide Outline")
+
+    slides = [
+        (
+            "Slide 1 — Target and Model",
+            "outputs/panels/slide1_target_and_simulation.png",
+            "1:00",
+            (
+                "Open with the biological image or schematic. "
+                "Point to the star geometry — shared atrium, radial arms, regular spacing. "
+                "Say: 'We asked whether local rules alone can generate this pattern. "
+                "The answer is yes, with two coupled layers.' "
+                "Show the three-panel figure: schematic | GM field | agents."
+            ),
+        ),
+        (
+            "Slide 2 — How the Model Works",
+            "outputs/panels/slide2_model_schematic.png",
+            "0:50",
+            (
+                "Walk through the architecture diagram. "
+                "Layer 1: GM field places the centers — "
+                "'Turing instability, short-range activation, long-range inhibition.' "
+                "Layer 2: active particles form the arms — "
+                "'radial spring, angular repulsion, chirality.' "
+                "Point at the key equations. Keep it to two sentences per layer."
+            ),
+        ),
+        (
+            "Slide 3 — Dynamics",
+            "outputs/panels/slide3_simulation_sequence.png",
+            "1:00",
+            (
+                "Show the time sequence: arms self-organize from initialization. "
+                "If the app is running, switch to Movie Gallery and play "
+                "'star_formation_clean.gif' and 'chiral_twist_emergence.gif'. "
+                "Key point: 'With omega=0 the pattern is radial; "
+                "with omega=2.5 the arms rotate — this is the chirality signature.'"
+            ),
+        ),
+        (
+            "Slide 4 — Phase Space",
+            "outputs/panels/slide4_phase_diagram.png",
+            "1:00",
+            (
+                "Show both heatmaps side by side. "
+                "Left: star-likeness peaks at moderate k_radial, low omega. "
+                "Right: swirl is zero at omega=0 and rises with chirality. "
+                "Key point: 'The two metrics are not correlated — "
+                "you can have good arms without chirality, and chirality "
+                "without arm degradation (up to omega ~ 2).' "
+                "Point to the phase boundary."
+            ),
+        ),
+        (
+            "Slide 5 — Honest Assessment",
+            "outputs/panels/slide5_insight_and_limits.png",
+            "1:10",
+            (
+                "Green column: what the model matches. "
+                "Orange column: what it does not. "
+                "Key points: 'Radial geometry: yes. Arm count: approximately. "
+                "Blastogenic biology: no.' "
+                "End with: 'The value of this model is not biological accuracy — "
+                "it is demonstrating that spatial geometry can emerge from "
+                "two coupled local rules without global coordination.'"
+            ),
+        ),
+    ]
+
+    for title, path, duration, script in slides:
+        with st.expander(f"{title}  ({duration})", expanded=False):
+            icol, scol = st.columns([1, 1], gap="large")
+            with icol:
+                _show_image_safe(path)
+            with scol:
+                st.markdown(f"**File:** `{path}`")
+                st.markdown(f"**Duration:** {duration}")
+                st.markdown("**Speaker notes:**")
+                st.markdown(script)
+
+    st.markdown("---")
+    st.markdown("### Closing Slide")
+    _show_image_safe(
+        "outputs/panels/final_summary_panel.png",
+        caption="Use as a poster/closing slide. Shows all key outputs in one panel.",
+    )
+
+    st.markdown("---")
+    st.markdown("### 2-Minute Live Demo Script")
+    st.markdown(
+        """
+1. Switch to **Model Builder** tab.
+2. Leave defaults. Click **Run Simulation**. (~20 seconds)
+3. Point to metric cards: "Radial order is 1.0 — agents are well-contained.
+   Star-likeness shows the composite score."
+4. Increase omega to 2.5. Click **Run Simulation** again.
+5. Compare the agent snapshot: "Arms have rotated — chirality is visible."
+6. Switch to **Live Phase Explorer**. Select Sweep A. Click **Load pregenerated**.
+7. Point to the heatmap: "Best star-likeness at moderate radial attraction and
+   low chirality — the top-left region. High chirality degrades arm structure."
+8. Switch to **Movie Gallery**. Play `star_formation_clean.gif`.
+9. Say: "This is the arms forming in real time from a uniform initialization."
+        """
+    )
+
+    st.markdown("---")
+    st.markdown("### Backup Plan")
+    st.warning(
+        "If the app fails: open `outputs/panels/` in a file browser and present "
+        "the six PNG files (slide1 through slide5 + final_summary_panel) directly. "
+        "All phase diagrams are in `outputs/phase_diagrams/`. "
+        "Movies are in `outputs/movies/` and can be opened in any image viewer."
+    )
+
+    with st.expander("All pregenerated output files"):
+        for subdir in ["panels", "star_ascidian", "phase_diagrams", "movies", "reference"]:
+            d = os.path.join("outputs", subdir)
+            if os.path.isdir(d):
+                files = sorted(f for f in os.listdir(d)
+                               if os.path.isfile(os.path.join(d, f)))
+                st.markdown(f"**outputs/{subdir}/**  ({len(files)} files)")
+                for fname in files:
+                    st.markdown(f"  `{fname}`")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAIN
+# ─────────────────────────────────────────────────────────────────────────────
+
+_render_header()
+
+tabs = st.tabs([
+    "Target Pattern",
+    "Model Builder",
+    "Phase Explorer",
+    "Movie Gallery",
+    "Model Library",
+    "LLM Lab Notebook",
+    "Presentation Mode",
+])
+
+with tabs[0]:
+    _tab_target()
+
+with tabs[1]:
+    _tab_model_builder()
+
+with tabs[2]:
+    _tab_phase_explorer()
+
+with tabs[3]:
+    _tab_movie_gallery()
+
+with tabs[4]:
+    _tab_model_library()
+
+with tabs[5]:
+    _tab_llm_notebook()
+
+with tabs[6]:
+    _tab_presentation()

@@ -219,3 +219,69 @@ hr {
 .plot-container {
     overflow: hidden;
 }
+
+/* ---- Model library card ---- */
+.model-card {
+    background-color: #FFFFFF;
+    border: 1px solid #DDD5C8;
+    border-top: 3px solid #C15A3A;
+    border-radius: 4px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 0.8rem;
+    height: 100%;
+}
+
+/* ---- What to notice callout ---- */
+.notice-box {
+    background-color: #EAF0EC;
+    border-left: 4px solid #315C4C;
+    border-radius: 0 4px 4px 0;
+    padding: 0.8rem 1rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    color: #1F2421;
+}
+
+/* ---- Limitation box ---- */
+.limit-box {
+    background-color: #FFF3EE;
+    border-left: 4px solid #C15A3A;
+    border-radius: 0 4px 4px 0;
+    padding: 0.8rem 1rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    color: #1F2421;
+}
+
+/* ---- App header ---- */
+.app-header {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.6rem 0 0.4rem 0;
+    border-bottom: 2px solid #DDD5C8;
+    margin-bottom: 0.4rem;
+}
+.app-title {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: #1F2421;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1.15;
+}
+.app-subtitle {
+    font-size: 0.88rem;
+    color: #666;
+    font-style: italic;
+    margin: 0;
+}
+
+/* ---- Metric row ---- */
+.metric-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin: 0.8rem 0;
+}
+
