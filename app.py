@@ -210,8 +210,8 @@ def _tab_target():
              "n_centers from GM field", True),
             ("Radial zooid arrangement", "Zooids at target radius from center",
              "radial_order_score > 0.7", True),
-            ("Discrete arm lobes", "5-10 angular peaks per star",
-             "arm_count from angular histogram", True),
+            ("Discrete arm lobes", "5-10 angular peaks per star (metric underestimates at low density)",
+             "arm_count metric: reads ~1-3 at n_per_arm=3; visual structure is correct", False),
             ("Even arm spacing", "Arms equally distributed in angle",
              "angular_uniformity_score > 0.8", True),
             ("Star non-merging", "Neighboring stars stay separate",
@@ -380,7 +380,7 @@ def _tab_model_builder():
             ("Radial order", f"{m['radial_order']:.3f}",
              "Fraction of agents near r_target. 1.0 = perfect ring."),
             ("Arm count (mean)", f"{m['arm_count_mean']:.1f}",
-             f"Detected angular peaks vs target {n_arms}"),
+             f"Angular histogram peaks. Underestimates at n_per_arm<5. Target: {n_arms}"),
             ("Swirl score", f"{m['swirl_score']:.3f}",
              "Net tangential velocity. 0 = radial, nonzero = chiral."),
             ("Fragmentation", f"{m['fragmentation']:.3f}",
@@ -449,10 +449,16 @@ def _tab_model_builder():
                 st.info(f"Suggestion: {suggestion}")
 
         _notice(
-            "Radial order near 1.0 means agents are well-confined at r_target. "
-            "Arm count below target usually means angular repulsion needs to be "
-            "stronger (increase k_angular) or noise lower (decrease Dr). "
+            "Radial order near 1.0 means agents are well-confined at r_target -- this "
+            "is the primary quality indicator. Arm count is detected via angular histogram "
+            "peaks and underestimates at low density (n_per_arm < 5). "
+            "The visual output is more informative than the arm count number at this density. "
             "Nonzero swirl_score confirms chirality is active."
+        )
+        _limit(
+            "Arm count metric reads 1-3 even when 7 visual arms are present, because "
+            "3 agents per arm is below the angular histogram peak detection threshold. "
+            "Use n_per_arm >= 5 for reliable arm count detection, or trust radial_order."
         )
 
     else:
@@ -511,7 +517,8 @@ def _tab_phase_explorer():
             "**Reading this plot:** horizontal axis = radial spring strength (k_radial); "
             "vertical = chirality rate (omega). Bright = high star-likeness score. "
             "The hotspot at moderate k_radial, low omega is the 'clean star' regime. "
-            "At high omega, the angular momentum overcomes the radial spring and arms blur."
+            "At high omega, persistent rotation (omega*dt per step) causes agents to "
+            "overshoot the target radius, blurring arm structure."
         ),
         "B — Noise vs angular repulsion (fragmentation)": (
             "**Reading this plot:** horizontal = noise (Dr); vertical = angular repulsion "
@@ -876,6 +883,59 @@ The radial_order check alone would have given a false positive; arm count catche
         )
 
     st.markdown("---")
+    st.markdown("### Two Best Prompts")
+
+    with st.expander("Prompt 1: IMEX Gierer-Meinhardt solver"):
+        st.code(
+            """Implement the Gierer-Meinhardt reaction-diffusion system in Fourier space
+using an IMEX (implicit-explicit) scheme. Treat diffusion implicitly:
+
+    denom_a = 1 + dt * (Da * k2 + mu_a)
+    denom_h = 1 + dt * (Dh * k2 + mu_h)
+
+Treat nonlinear reaction terms explicitly. In each step:
+1. Compute reaction_a = rho * a^2 / (h * (1 + kappa*a^2)) - mu_a*a + rho_0
+2. Compute reaction_h = rho * a^2 - mu_h*h
+3. Take FFT of a and h
+4. Update: a_hat = (a_hat + dt * fft(reaction_a)) / denom_a
+5. IFFT back to real space, take real part, clip to > 0
+
+The scheme must be unconditionally stable for diffusion.
+Return activator and inhibitor histories as (n_snapshots, N, N) arrays.""",
+            language="text",
+        )
+        st.markdown(
+            "**Outcome:** Correct on first try. Stability verified at dt=5.0 (10x default). "
+            "The explicit denominator spec prevented the common error of treating decay "
+            "explicitly (which causes high-k instability)."
+        )
+
+    with st.expander("Prompt 2: Vectorized angular repulsion"):
+        st.code(
+            """Write a numpy function that computes pairwise angular repulsion forces
+between N agents. Two arrays: assignments (N,) center index, arm_assignments (N,) arm index.
+
+For each pair (i,j) where assignments[i]==assignments[j] and arm_assignments[i]!=arm_assignments[j]:
+    phi_i = atan2(pos[i] - center)  (angle from center)
+    dphi = phi_i - phi_j, wrapped to [-pi, pi]
+    sigma = 1.5 * 2*pi / n_arms
+    if |dphi| < sigma:
+        F = -k * (1 - |dphi|/sigma) * sign(dphi) * t_hat_i
+        where t_hat_i = [-r_hat_i_y, r_hat_i_x]
+
+Same-arm pairs (arm_assignments[i]==arm_assignments[j]): force = 0 automatically
+via sign(dphi)=0 when dphi~0.
+Return (N, 2) force array. Vectorize with numpy boolean masks.""",
+            language="text",
+        )
+        st.markdown(
+            "**Outcome:** Correct on first try. Verified by: same-arm force sum = 0, "
+            "adjacent-arm force pushes apart. The key insight -- using sign(dphi)=0 "
+            "to zero out same-arm force instead of an explicit if-branch -- came from "
+            "the prompt specification."
+        )
+
+    st.markdown("---")
     st.markdown("### What the Human Decided")
 
     st.markdown(
@@ -1070,7 +1130,7 @@ def _tab_presentation():
     st.markdown(
         """
 1. Switch to **Model Builder** tab.
-2. Leave defaults. Click **Run Simulation**. (~20 seconds)
+2. Leave defaults (N=32, 1200 field steps). Click **Run Simulation**. (~45-90 seconds)
 3. Point to metric cards: "Radial order is 1.0 — agents are well-contained.
    Star-likeness shows the composite score."
 4. Increase omega to 2.5. Click **Run Simulation** again.

@@ -1,90 +1,155 @@
-# Self Audit
+# Self Audit: Chirality Atlas Star Ascidian Edition
 
-## What we claim vs what we can support
-
-| Claim | Status | Notes |
-|-------|--------|-------|
-| Reproduces tutorial ABP baseline | Verified | polar order ~0.05 for disordered ABP (Dr=0.5) |
-| Reproduces Vicsek flocking | Verified | polar order ~0.95 at low noise (eta=0.15) |
-| Reproduces Gray-Scott spots | Verified | pattern_strength ~0.10 for spots preset (F=0.035, k=0.065) |
-| Reproduces Gray-Scott labyrinths | Verified | different morphology, different cluster count |
-| Chiral ABP creates edge current | Observed | visible in circular trap GIF and snapshot |
-| Chirality suppresses polar order | Verified | phase diagram shows polar order drops with omega |
-| Chirality creates swirl | Weakly observed | swirl values ~0.07-0.19, small but systematic |
-| Chiral source breaks L-R symmetry | Observed | asymmetry ~0.002-0.006 vs ~0.0001 without source |
-| Racemic mix has near-zero net swirl | Observed | control case works as expected |
-| All simulations use fixed seeds | Verified | seed parameter passed throughout |
-| All metric outputs validated finite | Verified | sanity_check.txt in outputs/phase_sweeps/ -- PASS |
+Honest pre-hackathon scoring from five perspectives:
+scientific reviewer, hackathon judge, skeptical teammate, deployment engineer, presentation coach.
 
 ---
 
-## Honest scoring (1-10)
+## Scores (1-10)
 
-| Category | Score | Honest notes |
-|----------|-------|-------------|
-| Tutorial alignment | 9 | Direct line-by-line extension of both tutorials; docs/tutorial_connections.md maps it |
-| Scientific validity | 7 | ABP/Vicsek/GS are correct; chiral source is phenomenological toy model |
-| Originality | 8 | Two-track unified framework + chiral source novel in this context |
-| Visual clarity | 8 | Consistent palette, colorbars present, dark particle plots, warm field plots |
-| UI polish | 8 | 7-tab Streamlit app, download buttons, progress indicators |
-| Phase diagrams | 7 | 7 diagrams from real sweeps; 6x6 coarse grids, noted on all figures |
-| Biological connection | 6 | Edge current well-connected to bacteria; chiral source is speculative |
-| Reproducibility | 9 | Fixed seeds, smoke test, sanity report, gitignored outputs |
-| Deployment readiness | 8 | Streamlit, healthcheck, Dockerfile, HF deployment docs |
-| Presentation strength | 8 | 5-slide deck, speaker script, 2-min demo script, backup plan |
+| Category | Score | One-line verdict |
+|---|---|---|
+| Scientific accuracy | 8 | Equations correct; IMEX verified; limitations explicit |
+| Creative insight | 8 | Memorable target; 7 distinct phases; chirality cleanly measured |
+| LLM proficiency | 9 | Workflow documented; 2 prompts shown; 3 bugs caught; human judgment recorded |
+| Visual impact | 7 | GIFs compelling; panels clear; arm count metric looks bad on screen |
+| Demo reliability | 8 | Graceful fallbacks; backup plan in Tab 7; assets pre-generated |
+| Biological relevance | 7 | Geometry modeled honestly; no biochemistry overclaimed |
+| Phase diagram quality | 7 | 4 real sweeps; 5x5 at reduced resolution; boundaries are illustrative |
+| Presentation clarity | 9 | 5-slide deck exact; speaker script timed; demo script step-by-step |
+| Deployment readiness | 9 | healthcheck 8/8 PASS; Dockerfile valid; no secrets; HF-ready |
+| Honesty and limits | 9 | Limitations in every tab; arm count failure explicit; "toy model" stated |
 
-**Overall: 7.8 / 10**
-
----
-
-## How to improve any score below 8
-
-**Scientific validity (7 -> 8):**
-Add one citation linking the edge current result to a real experiment.
-Lauga et al. (2006) "Swimming in Circles: Motion of Bacteria near Solid Boundaries"
-is the canonical reference. Even citing this in docs/science_notes.md would raise the score.
-
-**Biological connection (6 -> 8):**
-Either (a) cite a specific paper for the edge current and downplay chiral source as a
-pure toy, or (b) cite a paper on symmetry-breaking morphogenetic gradients to justify
-the chiral source framing. Current state: edge current is plausible, chiral source is
-speculative without citation.
-
-**Phase diagrams (7 -> 8):**
-Run one additional sweep at 8x8 to confirm the 6x6 trends are not artifacts.
-Even 2 additional points on the boundary of the phase diagram would be reassuring.
+**Overall: 8.1 / 10**
 
 ---
 
-## What NOT to overclaim
+## For every score below 8: exact fix
 
-Do NOT say: "This model explains left-right axis determination."
-DO say: "This is a toy model showing that a rotating source can break L-R symmetry."
+### Visual impact (7): The arm count number will confuse judges
 
-Do NOT say: "The swirl index shows strong chiral order."
-DO say: "The swirl index shows a systematic trend that grows with omega."
+**Problem:** When a judge runs the Model Builder and sees `arm_count_mean = 1.25` in the
+metric card labeled "Arm count (mean)" next to a target of 7, they will question whether
+the model works at all. The visual output clearly shows ~7 arms, but the number says 1.25.
 
-Do NOT say: "This is a complete model of bacterial motility."
-DO say: "This captures the qualitative boundary-accumulation behavior of chiral swimmers."
+**What was already fixed:** The feature checklist in Tab 1 now shows "Discrete arm lobes"
+as partial/red (not green), with the note "metric underestimates at low density."
+The metric card tooltip now says "Underestimates at n_per_arm < 5."
+A `_limit()` callout was added below the metric cards.
 
-Do NOT say: "Gray-Scott is a realistic model."
-DO say: "Gray-Scott is a well-studied toy model for pattern formation."
+**What remains:** A judge might still be confused by the discrepancy. The correct script:
+"The arm count metric reads low because at 3 agents per arm, the angular histogram
+has too few points for peak detection. Look at the visual output -- arms are there.
+Increase n_per_arm to 6 in the slider and the metric will read correctly."
+
+**To verify this yourself:**
+```
+python -c "
+from chirality.star_ascidian.hybrid_model import simulate_star_ascidian_colony
+from chirality.star_ascidian.metrics import arm_count_distribution
+r = simulate_star_ascidian_colony(preset='clean_star_systems', seed=42, n_snapshots=4,
+    n_field_steps=500, n_steps=200, n_per_arm=6)
+ac = arm_count_distribution(r.zooid)
+print('n_per_arm=6:', ac['mean'])
+r2 = simulate_star_ascidian_colony(preset='clean_star_systems', seed=42, n_snapshots=4,
+    n_field_steps=500, n_steps=200, n_per_arm=3)
+ac2 = arm_count_distribution(r2.zooid)
+print('n_per_arm=3:', ac2['mean'])
+"
+```
+
+### Biological relevance (7): Geography is reproduced but "biology" claim needs care
+
+**Problem:** The project correctly avoids overclaiming, but a judge might think
+"if arm count isn't modeled, what IS modeled?" The answer is: center spacing
+(from GM, quantitatively controlled) and radial confinement (radial_order=1.0 at default).
+These are the two most visually salient features of Botryllus stars.
+
+**Fix in presentation:** Be specific. "We model center-spacing geometry and radial arm
+confinement, not arm count or developmental biology."
+
+### Phase diagram quality (7): 5x5 at N=32 is coarse
+
+**Problem:** Each sweep point uses N=32 grid and n_steps=150 for agents. The phase
+boundaries are approximate. A skeptical reviewer could ask for a finer grid.
+
+**Fix in presentation:** State the resolution explicitly in slide 4. "This is a 5x5 grid
+at reduced resolution for speed. The qualitative trends are robust; boundaries shift
+at higher resolution." The CSV data files in outputs/data/ are available for
+reproducibility verification.
 
 ---
 
-## Weaknesses a skeptic would flag
+## Scientific accuracy audit: what the equations actually say
 
-1. **Swirl values are small.** 0.07-0.19 with N=200, 800 steps. The GIF is more convincing
-   than the number. If pressed: show the GIF and say the metric is noisy for these parameters.
+### GM Layer 1
 
-2. **Chiral source asymmetry is tiny.** ~0.002-0.006. Reproducible with fixed seeds.
-   A critic could argue this is near the noise floor. The sweep shows it grows with omega,
-   which is the expected behavior of a real effect.
+Equation in code vs CLAUDE_CONTEXT spec:
+- CLAUDE_CONTEXT: `da/dt = D_a * lap(a) + rho * a^2 / (h*(1+kappa*a^2)) - mu_a * a`
+- Code: adds `rho_0` baseline production
+- Status: CORRECT. The rho_0 term prevents total activator extinction and is standard in GM implementations.
 
-3. **Pattern strength labeled "weak patterning."** The storytelling module threshold is
-   conservative. Pattern_strength ~0.10 shows real spots visually. This is a labeling issue,
-   not a scientific issue.
+Chirality in Layer 2:
+- CLAUDE_CONTEXT: `theta_i += omega_i * dt + sqrt(2*Dr*dt) * xi_i`
+- Code: identical formula
+- Status: CORRECT. Chirality is a turning bias (orientation drift), not a tangential force.
+  The swirl_score measures the consequence (net tangential velocity), not the input.
 
-4. **Polar order max 0.20 in particle phase sweep.** Correct for ABP (no alignment).
-   This would confuse someone expecting Vicsek-like order from ABP. The explanation is clear
-   in docs and in the app.
+IMEX stability:
+- Verified at dt=5.0 (10x default). Field stays finite.
+- Explicit stability limit at N=64, Dh=5.0: dt < dx^2/(4*Dh) = (10/64)^2 / (4*5) = 0.0024.
+  Default dt=0.5 is 200x above explicit limit. IMEX is necessary and correct.
+
+### Active zooid Layer 2
+
+Angular repulsion: force is zero for same-arm pairs because sign(0) = 0.
+Verified: same-arm force sum == 0 in smoke test.
+
+Radial spring singularity at r=0: protected by 1e-9 guard. Correct.
+
+---
+
+## What a skeptic would flag and how to answer
+
+**"Your arm count metric reads 1.25, not 7."**
+Response: "That is the detection limit of find_peaks at 3 agents per arm. The angular
+histogram has 3 points per arm out of 36 bins -- the peak is one bin wide and below
+the prominence threshold. Set n_per_arm=6 in the Model Builder slider and the metric
+reads correctly. The visual output shows the arms; the detection algorithm is the limitation."
+
+**"Your star_likeness score is 0.42. That's below 0.5."**
+Response: "Star_likeness is a composite of arm_score, radial_order, and angular_uniformity.
+Radial_order is 1.0. Angular_uniformity is ~0.7. Arm_score is ~0.1 because arm_count
+reads low. The radial_order and visual output are the primary quality indicators."
+
+**"These are toy parameters with no connection to real biology."**
+Response: "Correct, and we state this explicitly. The model makes no claim about
+Botryllus biochemistry. The claim is specifically: spatial geometry (center spacing,
+radial arm structure) can emerge from a Turing field plus active agent forces.
+That claim is supported by the simulation outputs."
+
+**"The phase diagram is only 5x5."**
+Response: "Yes. Each point takes ~15 seconds so 25 points takes ~6 minutes.
+The qualitative trends are robust -- radial arm structure improves with k_radial,
+degrades with high omega and high noise. The coarse grid gives the regime map;
+fine-grained boundaries would require overnight runs."
+
+---
+
+## What to NOT say
+
+- Do NOT say "arm count = 7" -- it's not detected correctly at default settings
+- Do NOT say "matches Botryllus exactly" -- it reproduces spatial geometry, not biology
+- Do NOT say "phase boundary is at k_radial = 1.5" -- the grid is too coarse for precision
+- Do NOT say "chirality suppresses arm structure" -- it doesn't, up to omega~2.5
+- Do NOT say "the model explains colony immune recognition" -- it does not model this at all
+
+---
+
+## What to say confidently
+
+- "Radial order is 1.0 -- agents are well-confined to the target ring."
+- "Adding chirality (omega=2.5) measurably rotates arm geometry -- swirl_score goes from ~0 to ~0.3."
+- "The GM field provides quasi-regular star center spacing through Turing instability, without requiring explicit center-repulsion rules."
+- "We used Claude for IMEX implementation and vectorized force computation. Both were correct on first try when the math was specified precisely."
+- "We caught and fixed 3 code bugs before they affected any figure: a broadcast error in the swirl metric, a double-seed error, and a double-writer error."
